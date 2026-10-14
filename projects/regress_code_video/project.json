@@ -1,0 +1,116 @@
+{
+  "title": "一行代码，怎么变成一段视频？",
+  "format": {
+    "width": 1080,
+    "height": 1920,
+    "fps": 30
+  },
+  "voice": {
+    "engine": "edge",
+    "voice": "zh-CN-XiaoyiNeural",
+    "rate": "+4%"
+  },
+  "timing": {
+    "lead": 0.5,
+    "gap": 0.55,
+    "tail": 3.2
+  },
+  "overlay": {
+    "brand": "麻酱 AI 实验室",
+    "styleLabel": true,
+    "subtitles": true,
+    "avatar": "assets/avatar.png",
+    "outro": {
+      "shot": "s11",
+      "phrase": "我是麻酱"
+    }
+  },
+  "music": {
+    "enabled": true,
+    "volume": 0.26,
+    "bpm": 100
+  },
+  "mix": {
+    "sfx_volume": 0.3,
+    "loudness": -14
+  },
+  "output_name": "成片.mp4",
+  "shots": [
+    {
+      "id": "s01",
+      "scene": "terminal",
+      "label": "终端",
+      "text": "你现在看到的这段视频，没有一个镜头是拍的，也没有用视频生成模型。它的每一帧，都是代码画出来的。",
+      "transition": "glitch"
+    },
+    {
+      "id": "s02",
+      "scene": "flipbook",
+      "label": "手翻书",
+      "text": "视频的本质，其实就是一本手翻书。一秒钟快速翻过三十张图，眼睛就会把它们连成动作。",
+      "transition": "pixel"
+    },
+    {
+      "id": "s03",
+      "scene": "pixel",
+      "label": "像素",
+      "text": "每一张图，又是由一个个像素拼成的。代码要做的，就是决定每个像素是什么颜色。",
+      "transition": "wipe"
+    },
+    {
+      "id": "s04",
+      "scene": "blueprint",
+      "label": "蓝图",
+      "text": "那动画从哪来？把位置写成时间的函数。时间每往前走一点，小球就跟着挪一点。",
+      "transition": "circle"
+    },
+    {
+      "id": "s05",
+      "scene": "easing",
+      "label": "纸艺",
+      "text": "但匀速运动看起来很僵。加一条缓动曲线，先快后慢，动作一下子就有了重量。",
+      "transition": "slide"
+    },
+    {
+      "id": "s06",
+      "scene": "synth",
+      "label": "合成波",
+      "text": "想要立体感？离得越远，画得越小。一个简单的除法，就能算出整条透视的公路。",
+      "transition": "circle"
+    },
+    {
+      "id": "s07",
+      "scene": "ink",
+      "label": "水墨",
+      "text": "再把画面拆成远山、中景和近景，三层用不同的速度移动，平面的画就有了纵深。",
+      "transition": "wipe"
+    },
+    {
+      "id": "s08",
+      "scene": "particles",
+      "label": "粒子",
+      "text": "一千多个点，每个点只守一条简单的规则，合在一起，就能自己聚成字。",
+      "transition": "glitch"
+    },
+    {
+      "id": "s09",
+      "scene": "swiss",
+      "label": "海报",
+      "text": "最后，程序把时间从零推到结尾，一帧一帧拍下来，交给编码器，拼成你手机里的视频。",
+      "transition": "slide"
+    },
+    {
+      "id": "s10",
+      "scene": "comic",
+      "label": "漫画",
+      "text": "这么做的好处是，每一帧都精确可控。想改速度？改一个数字，重新出片就行。",
+      "transition": "circle"
+    },
+    {
+      "id": "s11",
+      "scene": "film",
+      "label": "胶片",
+      "text": "所以，与其说这是一段视频，不如说，这是一段会动的代码。我是麻酱，我们下期见。"
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+# 中间产物和成片（可以随时重新生成）
+projects/*/build/
+projects/*/output/
+# 回归测试要用原版配音（edge-tts 每次合成略有不同），这部分要进仓库
+!projects/regress_code_video/build/
+projects/regress_code_video/build/*
+!projects/regress_code_video/build/audio/
+*.log
+psnr*.log
+node_modules/
+__pycache__/
+.DS_Store

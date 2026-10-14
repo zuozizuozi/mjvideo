@@ -1,0 +1,32 @@
+{
+  "title": "这里写本期标题",
+  "format": { "width": 1080, "height": 1920, "fps": 30 },
+  "voice": { "engine": "edge", "voice": "zh-CN-XiaoyiNeural", "rate": "+4%" },
+  "timing": { "lead": 0.5, "gap": 0.55, "tail": 3.2 },
+  "overlay": {
+    "brand": "麻酱 AI 实验室",
+    "styleLabel": false,
+    "subtitles": true,
+    "avatar": "assets/avatar.png",
+    "outro": null
+  },
+  "music": { "enabled": true, "volume": 0.26, "bpm": 100 },
+  "mix": { "sfx_volume": 0.30, "loudness": -14 },
+  "output_name": "成片.mp4",
+  "shots": [
+    {
+      "id": "s01",
+      "scene": "terminal",
+      "label": "开场",
+      "text": "这里写这一镜的口播，一镜一段完整的话。",
+      "transition": "glitch",
+      "params": { "cues": { "cNo": 1.0, "cGen": 2.0, "cEvery": 3.0 } }
+    },
+    {
+      "id": "s02",
+      "scene": "my_new_scene",
+      "label": "新知识点",
+      "text": "需要新画面时，在项目的 scenes 文件夹里写一个新场景，scene 填它的名字。"
+    }
+  ]
+}

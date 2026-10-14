@@ -1,0 +1,43 @@
+{
+  "title": "橡皮筋为什么会缩回去？（横屏测试）",
+  "format": {
+    "width": 1920,
+    "height": 1080,
+    "fps": 30
+  },
+  "voice": {
+    "engine": "edge",
+    "voice": "zh-CN-XiaoyiNeural",
+    "rate": "+4%"
+  },
+  "timing": {
+    "lead": 0.5,
+    "gap": 0.55,
+    "tail": 1.6
+  },
+  "overlay": {
+    "brand": "麻酱 AI 实验室",
+    "styleLabel": false,
+    "subtitles": true,
+    "avatar": "assets/avatar.png",
+    "outro": null
+  },
+  "music": {
+    "enabled": true,
+    "volume": 0.26,
+    "bpm": 100
+  },
+  "mix": {
+    "sfx_volume": 0.3,
+    "loudness": -14
+  },
+  "output_name": "成片.mp4",
+  "shots": [
+    {
+      "id": "s01",
+      "scene": "polymer_chain",
+      "label": "熵力",
+      "text": "把橡皮筋拉长，里面的分子链被拉直，能摆的姿势就变少了。一松手，热运动又把它们揉成一团，这股回缩的力，就叫熵力。"
+    }
+  ]
+}

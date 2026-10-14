@@ -1,0 +1,55 @@
+{
+  "title": "复用测试：换讲稿、只改参数",
+  "format": {
+    "width": 1080,
+    "height": 1920,
+    "fps": 30
+  },
+  "voice": {
+    "engine": "edge",
+    "voice": "zh-CN-XiaoyiNeural",
+    "rate": "+4%"
+  },
+  "timing": {
+    "lead": 0.5,
+    "gap": 0.55,
+    "tail": 1.2
+  },
+  "overlay": {
+    "brand": "麻酱 AI 实验室",
+    "styleLabel": false,
+    "subtitles": true,
+    "avatar": "assets/avatar.png",
+    "outro": null
+  },
+  "music": {
+    "enabled": true,
+    "volume": 0.26,
+    "bpm": 100
+  },
+  "mix": {
+    "sfx_volume": 0.3,
+    "loudness": -14
+  },
+  "output_name": "成片.mp4",
+  "shots": [
+    {
+      "id": "s01",
+      "scene": "polymer_chain",
+      "label": "复用",
+      "text": "一根头发丝那么细的高分子，热的时候总在乱动。你把它抻直，它就想回去，因为乱的状态多得多。",
+      "params": {
+        "title": "乱才是常态",
+        "cues": {
+          "cStretch": "抻直",
+          "cStraight": 4.6,
+          "cFewer": 5.2,
+          "cRelease": "想回去",
+          "cBall": 7.5,
+          "cForce": "乱的状态"
+        },
+        "subtitle": "拉直它，它为什么想回去？"
+      }
+    }
+  ]
+}

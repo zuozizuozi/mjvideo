@@ -1,0 +1,224 @@
+#!/usr/bin/env node
+// mjvideo MCP 服务（stdio，零 npm 依赖）：把 mjv 命令行包成 MCP 工具，给 Codex / Claude Code / Zaovra / Cursor 等 Agent 调用。
+//
+//   node mcp/server.mjs
+//
+// 设计要点：
+//   · 渲染、配乐这类命令可能跑几分钟，而有的客户端工具超时只有 5 秒。所以所有命令都在后台跑成"任务"：
+//     调用时最多等 wait_seconds 秒，跑完直接返回结果；没跑完返回 job_id，之后用 mjv_job 查进度 / 取结果。
+//   · 出静帧（mjv_stills）会把每个镜头的静帧拼成一张图，作为图片直接返回给 Agent 看。
+//   · 只开放 mjv 的固定命令，不执行任意 shell。改场景代码、project.json 用 Agent 自己的文件编辑工具。
+// 环境变量：MJV_PROJECTS 项目目录（默认 <引擎>/projects）；MJV_MCP_WAIT 默认等待秒数（默认 3.5）；
+//           MJV_CHROME / MJV_PYTHON 同命令行。
+import { spawn, spawnSync } from "node:child_process";
+import fs from "node:fs";
+import path from "node:path";
+import readline from "node:readline";
+import { fileURLToPath } from "node:url";
+
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const PROJECTS = path.resolve(process.env.MJV_PROJECTS || path.join(ROOT, "projects"));
+const DEFAULT_WAIT = Number(process.env.MJV_MCP_WAIT || 3.5);
+const VERSION = "0.1.0";
+const log = (...a) => process.stderr.write("[mjvideo-mcp] " + a.join(" ") + "\n");   // stdout 只能写协议消息
+
+// ---------------- 工具定义 ----------------
+const projectProp = { type: "string", description: "项目名（在项目目录下）或项目的绝对路径" };
+const waitProp = { type: "number", description: `最多等待多少秒再返回（默认 ${DEFAULT_WAIT}，最大 50）。没跑完会返回 job_id，用 mjv_job 继续查` };
+const TOOLS = [
+  { name: "mjv_guide",
+    description: "读取 mjvideo 引擎的完整使用手册（SKILL.md）：工作流、场景编写规范、project.json 格式、无口播 Vibe 风格、常见错误。第一次用本引擎时必须先读。",
+    inputSchema: { type: "object", properties: { section: { type: "string", description: "只看某一节：填节号（如 \"2\"、\"11\"）或关键词；不填返回全文" } } } },
+  { name: "mjv_scenes",
+    description: "列出场景库（以及某个项目自带的场景）：名字、用途说明、尺寸、可调参数和 cues。选场景前先看这个。",
+    inputSchema: { type: "object", properties: { project: projectProp } } },
+  { name: "mjv_new_project",
+    description: "新建一个视频项目，返回项目路径和 project.json 模板。vibe=true 用无口播横屏 Vibe 风格模板（字幕 + 配乐），否则用竖屏配音模板。",
+    inputSchema: { type: "object", properties: { name: { type: "string", description: "项目名，只用字母数字下划线" }, vibe: { type: "boolean" } }, required: ["name"] } },
+  { name: "mjv_project_info",
+    description: "查看项目状态：路径、镜头列表和时长（来自时间轴）、最近一次质检结果、成片路径。",
+    inputSchema: { type: "object", properties: { project: projectProp }, required: ["project"] } },
+  { name: "mjv_run",
+    description: "运行引擎命令（后台任务）。command：tts 配音 / timeline 时间轴 / check 加载检查 / render 渲染（增量）/ audio 配乐混音 / mux 合成成片 / validate 质检 / build 一条龙（tts→validate）/ promote 把项目场景收进场景库。render 可带 only（逗号分隔镜头 id）、force、dry；promote 要带 scene。",
+    inputSchema: { type: "object", properties: {
+      command: { type: "string", enum: ["tts", "timeline", "check", "render", "audio", "mux", "validate", "build", "promote"] },
+      project: projectProp,
+      only: { type: "string", description: "render：只渲这些镜头，逗号分隔（注意不会带上相邻镜头，之后要再跑一次普通 render）" },
+      force: { type: "boolean", description: "render：全部重渲；promote：覆盖库里同名场景" },
+      dry: { type: "boolean", description: "render：只看哪些镜头需要重渲" },
+      scene: { type: "string", description: "promote：场景名" },
+      wait_seconds: waitProp }, required: ["command", "project"] } },
+  { name: "mjv_stills",
+    description: "抽静帧自查：渲染指定时间点的画面，按镜头拼成拼图并作为图片返回。不给 times 时自动取每个镜头的开头、每句字幕出现后 1.1 秒和结尾。改完场景代码后用它看效果，满意再 render。",
+    inputSchema: { type: "object", properties: {
+      project: projectProp,
+      shots: { type: "array", items: { type: "string" }, description: "只看这些镜头（如 [\"s03\",\"s05\"]）；不填看全部（镜头多时建议分批，每次 ≤ 6 个）" },
+      times: { type: "array", items: { type: "number" }, description: "自己指定全片时间点（秒）。给了就不按镜头自动取" },
+      wait_seconds: waitProp }, required: ["project"] } },
+  { name: "mjv_job",
+    description: "查后台任务：状态、退出码、日志末尾；任务完成时返回它的结果（mjv_stills 的任务会带图片）。",
+    inputSchema: { type: "object", properties: { job_id: { type: "string" }, wait_seconds: waitProp }, required: ["job_id"] } },
+];
+
+// ---------------- 工具实现 ----------------
+const text = (t) => ({ type: "text", text: t });
+const fail = (m) => ({ content: [text("✗ " + m)], isError: true });
+
+function resolveProject(p) {
+  if (!p) throw new Error("缺少 project");
+  const cands = path.isAbsolute(p) ? [p] : [path.join(PROJECTS, p), path.resolve(ROOT, p)];
+  const hit = cands.find((d) => fs.existsSync(path.join(d, "project.json")));
+  if (!hit) throw new Error(`找不到项目「${p}」（找过：${cands.join("、")}）`);
+  return hit;
+}
+
+const jobs = new Map(); let jobSeq = 0;
+function startJob(label, args, { cwd = ROOT, after } = {}) {
+  const id = `j${++jobSeq}-${Date.now().toString(36)}`;
+  const job = { id, label, out: "", status: "running", code: null, started: Date.now(), result: null, after };
+  const child = spawn(process.execPath, [path.join(ROOT, "bin", "mjv.mjs"), ...args], { cwd, env: { ...process.env, PYTHONIOENCODING: "utf-8" } });
+  const onData = (d) => { job.out += d.toString(); if (job.out.length > 200000) job.out = job.out.slice(-100000); };
+  child.stdout.on("data", onData); child.stderr.on("data", onData);
+  job.done = new Promise((res) => child.on("close", async (code) => {
+    job.code = code;
+    try { if (code === 0 && after) job.result = await after(job); } catch (e) { job.out += "\n结果整理失败：" + e.message; }
+    job.status = code === 0 ? "done" : "failed"; res();
+  }));
+  jobs.set(id, job); return job;
+}
+async function waitJob(job, seconds) {
+  const s = Math.min(50, Math.max(0, seconds ?? DEFAULT_WAIT));
+  await Promise.race([job.done, new Promise((r) => setTimeout(r, s * 1000))]);
+  return jobReport(job);
+}
+function jobReport(job) {
+  const secs = ((Date.now() - job.started) / 1000).toFixed(0);
+  const tail = job.out.trim().split("\n").filter((l) => !/stills[\\/]t[\d.]+\.png\s*$/.test(l)).slice(-25).join("\n");   // 静帧路径太多，只留拼图
+  if (job.status === "running") return { content: [text(`⏳ 任务 ${job.id}（${job.label}）还在运行，已 ${secs}s。用 mjv_job 查进度：{"job_id":"${job.id}"}\n--- 日志末尾 ---\n${tail}`)] };
+  const head = job.status === "done" ? `✓ ${job.label} 完成（${secs}s）` : `✗ ${job.label} 失败（退出码 ${job.code}，${secs}s）`;
+  const content = [text(`${head}\n--- 输出 ---\n${tail}`)];
+  if (job.result) content.push(...job.result);
+  return { content, isError: job.status === "failed" };
+}
+
+function stillTimes(pdir, shots) {
+  const tl = JSON.parse(fs.readFileSync(path.join(pdir, "build", "timeline.json"), "utf8"));
+  return tl.paras.filter((p) => !shots || shots.includes(p.id)).map((p) => {
+    const ts = [p.start + 0.6];
+    if (p.lines && p.lines.length) for (const l of p.lines) ts.push(p.start + l.t0 + 1.1);
+    else for (const f of [0.35, 0.7]) ts.push(p.start + (p.end - p.start) * f);
+    ts.push(p.end - 0.15);
+    return { id: p.id, times: [...new Set(ts.map((x) => +Math.max(0, x).toFixed(2)))] };
+  });
+}
+function sheet(files, out) {           // 把若干静帧拼成每行 3 张、每张 640 宽的拼图
+  const n = files.length, inp = files.flatMap((f) => ["-i", f]);
+  const fl = files.map((_, k) => `[${k}]scale=640:-2[s${k}]`).join(";") + ";" + files.map((_, k) => `[s${k}]`).join("") +
+    (n === 1 ? "copy" : `xstack=inputs=${n}:layout=${files.map((_, k) => `${(k % 3) * 640}_${Math.floor(k / 3) * 360}`).join("|")}:fill=black`);
+  const r = spawnSync("ffmpeg", ["-v", "error", "-y", ...inp, "-filter_complex", fl, "-frames:v", "1", "-update", "1", "-q:v", "4", out]);
+  if (r.status !== 0) throw new Error("拼图失败：" + r.stderr.toString().slice(-300));
+  return out;
+}
+
+const handlers = {
+  async mjv_guide({ section } = {}) {
+    const md = fs.readFileSync(path.join(ROOT, "SKILL.md"), "utf8");
+    const info = `引擎目录：${ROOT}\n项目目录：${PROJECTS}\n（改 project.json 和场景代码用你自己的文件编辑工具；跑命令用 mjv_run / mjv_stills）\n\n`;
+    if (!section) return { content: [text(info + md)] };
+    const parts = md.split(/\n(?=## )/);
+    const sec = String(section).trim();
+    const hit = /^\d+$/.test(sec) ? parts.filter((s) => s.startsWith(`## ${sec}.`))          // 节号只按标题匹配
+      : parts.filter((s) => s.toLowerCase().includes(sec.toLowerCase()));
+    return { content: [text(info + (hit.length ? hit.join("\n") : `没有找到「${section}」，各节标题：\n` + parts.map((s) => s.split("\n")[0]).join("\n")))] };
+  },
+  async mjv_scenes({ project } = {}) {
+    const args = ["scenes"]; if (project) args.push(resolveProject(project));
+    return waitJob(startJob("scenes", args), 20);
+  },
+  async mjv_new_project({ name, vibe }) {
+    if (!/^[\w-]+$/.test(name || "")) return fail("项目名只能用字母、数字、下划线、横线");
+    const pdir = path.join(PROJECTS, name);
+    const job = startJob("new", ["new", pdir, ...(vibe ? ["--vibe"] : [])]);
+    await job.done;
+    if (job.status !== "done") return jobReport(job);
+    return { content: [text(`✓ 新项目：${pdir}\n下一步：改 project.json（格式见 mjv_guide），需要新画面时在 ${path.join(pdir, "scenes")} 写场景。\n\n--- project.json ---\n` + fs.readFileSync(path.join(pdir, "project.json"), "utf8"))] };
+  },
+  async mjv_project_info({ project }) {
+    const pdir = resolveProject(project), b = (...p) => path.join(pdir, "build", ...p);
+    const cfg = JSON.parse(fs.readFileSync(path.join(pdir, "project.json"), "utf8"));
+    let s = `项目：${pdir}\n标题：${cfg.title || ""}\n画幅：${(cfg.format || {}).width || 1080}×${(cfg.format || {}).height || 1920}；配音：${(cfg.voice || {}).engine || "edge"}；镜头 ${cfg.shots.length} 个\n`;
+    if (fs.existsSync(b("timeline.json"))) {
+      const tl = JSON.parse(fs.readFileSync(b("timeline.json"), "utf8"));
+      s += `\n时间轴：总时长 ${tl.total.toFixed(2)}s\n` + tl.paras.map((p) => `  ${p.id}  ${p.scene.padEnd(22)} ${p.start.toFixed(2)}–${p.end.toFixed(2)}s`).join("\n") + "\n";
+    } else s += "\n还没有时间轴（先 mjv_run timeline，有配音的项目先 tts）\n";
+    if (fs.existsSync(b("validation.json"))) { const v = JSON.parse(fs.readFileSync(b("validation.json"), "utf8")); s += `\n最近一次质检：${v.ok ? "通过" : "未通过"}\n` + [...v.info, ...v.warns.map((w) => "WARN " + w), ...v.fails.map((f) => "FAIL " + f)].map((x) => "  " + x).join("\n") + "\n"; }
+    const out = path.join(pdir, "output", cfg.output_name || "成片.mp4");
+    s += fs.existsSync(out) ? `\n成片：${out}（${(fs.statSync(out).size / 1e6).toFixed(1)} MB）` : "\n还没有成片";
+    return { content: [text(s)] };
+  },
+  async mjv_run({ command, project, only, force, dry, scene, wait_seconds }) {
+    const CMDS = ["tts", "timeline", "check", "render", "audio", "mux", "validate", "build", "promote"];
+    if (!CMDS.includes(command)) return fail(`不支持的命令「${command}」，可用：${CMDS.join(" / ")}`);
+    const pdir = resolveProject(project), args = [command, pdir];
+    if (command === "promote") { if (!scene) return fail("promote 需要 scene"); args.push(scene); if (force) args.push("--force"); }
+    if (command === "render") { if (only) args.push(`--only=${only}`); if (force) args.push("--force"); if (dry) args.push("--dry"); }
+    return waitJob(startJob(`${command} ${path.basename(pdir)}`, args), wait_seconds);
+  },
+  async mjv_stills({ project, shots, times, wait_seconds }) {
+    const pdir = resolveProject(project);
+    if (!fs.existsSync(path.join(pdir, "build", "timeline.json"))) return fail("还没有时间轴，先 mjv_run timeline（有配音的项目先 tts）");
+    const groups = times && times.length ? [{ id: "custom", times: times.map((t) => +(+t).toFixed(2)) }] : stillTimes(pdir, shots);
+    if (!groups.length) return fail("没有匹配的镜头：" + (shots || []).join(","));
+    if (groups.length > 8) return fail(`一次最多看 8 个镜头（这次 ${groups.length} 个），请用 shots 分批`);
+    const all = [...new Set(groups.flatMap((g) => g.times))];
+    const after = async () => {
+      const dir = path.join(pdir, "build", "stills"), outs = [];
+      for (const g of groups) {
+        const files = g.times.map((t) => path.join(dir, `t${t}.png`)).filter((f) => fs.existsSync(f));
+        if (!files.length) continue;
+        const out = sheet(files, path.join(dir, `sheet_${g.id}.jpg`));
+        outs.push(text(`${g.id}：${g.times.join("s、")}s（从左到右、从上到下）→ ${out}`), { type: "image", data: fs.readFileSync(out).toString("base64"), mimeType: "image/jpeg" });
+      }
+      return outs;
+    };
+    return waitJob(startJob(`stills ${path.basename(pdir)}`, ["stills", pdir, ...all.map(String)], { after }), wait_seconds);
+  },
+  async mjv_job({ job_id, wait_seconds }) {
+    const job = jobs.get(job_id);
+    if (!job) return fail(`没有任务 ${job_id}（服务重启后任务记录会丢失；渲染日志在项目 build 目录里）`);
+    return waitJob(job, wait_seconds);
+  },
+};
+
+// ---------------- MCP 协议（JSON-RPC 2.0，按行分隔） ----------------
+const send = (m) => process.stdout.write(JSON.stringify(m) + "\n");
+const reply = (id, result) => send({ jsonrpc: "2.0", id, result });
+const replyErr = (id, code, message) => send({ jsonrpc: "2.0", id, error: { code, message } });
+const SUPPORTED = ["2025-06-18", "2025-03-26", "2024-11-05"];
+
+async function handle(msg) {
+  const { id, method, params } = msg;
+  if (method === "initialize") {
+    const v = SUPPORTED.includes(params?.protocolVersion) ? params.protocolVersion : SUPPORTED[0];
+    return reply(id, { protocolVersion: v, capabilities: { tools: { listChanged: false } },
+      serverInfo: { name: "mjvideo", version: VERSION },
+      instructions: "mjvideo：用代码（Canvas + 无头 Chrome + FFmpeg）做讲解视频的引擎，不调用视频生成模型。第一次使用先调 mjv_guide 读手册。流程：mjv_new_project → 编辑 project.json 和场景代码 → mjv_run timeline/check → mjv_stills 看画面并修改 → mjv_run render → audio → mux → validate。长任务会返回 job_id，用 mjv_job 查。" });
+  }
+  if (method === "ping") return reply(id, {});
+  if (method === "tools/list") return reply(id, { tools: TOOLS });
+  if (method === "tools/call") {
+    const h = handlers[params?.name];
+    if (!h) return replyErr(id, -32602, "未知工具：" + params?.name);
+    try { return reply(id, await h(params.arguments || {})); }
+    catch (e) { return reply(id, fail(e.message)); }
+  }
+  if (id !== undefined && id !== null) return replyErr(id, -32601, "不支持的方法：" + method);   // 通知（没有 id）直接忽略
+}
+
+readline.createInterface({ input: process.stdin }).on("line", (line) => {
+  if (!line.trim()) return;
+  let msg; try { msg = JSON.parse(line); } catch { return log("无法解析：", line.slice(0, 200)); }
+  handle(msg).catch((e) => { log(e.stack); if (msg.id != null) replyErr(msg.id, -32603, e.message); });
+});
+process.stdin.on("end", () => process.exit(0));
+log(`已启动 v${VERSION}，引擎 ${ROOT}，项目 ${PROJECTS}`);
