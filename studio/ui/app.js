@@ -2,7 +2,7 @@
 const $ = (s, el = document) => el.querySelector(s);
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const app = $("#app");
-let STYLES = [], SCENES = [];
+let STYLES = [], SCENES = [], GAMES = [];
 
 async function api(path, body) {
   const r = await fetch(path, body === undefined ? {} : { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
@@ -52,18 +52,21 @@ async function viewProjects() {
   const ps = await api("/api/projects");
   app.innerHTML = `<h1>项目</h1>
   <div class="bar"><input type="text" id="nn" placeholder="新项目名（英文、数字、下划线）">
+    <select id="nt"><option value="">无口播（字幕 + 配乐）</option><option value="gameplay">试玩解说（录屏 + 配音）</option></select>
+    <select id="ng"><option value="">（试玩解说选游戏）</option>${GAMES.map((g) => `<option value="${g.slug}">${esc(g.name)}</option>`).join("")}</select>
     <select id="ns"><option value="">不套风格包（之后再选）</option>${STYLES.map((s) => `<option value="${s.name}">${esc(s.title)}</option>`).join("")}</select>
     <button class="primary" id="nb">新建项目</button></div>
   <div class="list">${ps.map((p) => `<a class="row" href="#project/${encodeURIComponent(p.name)}"><div><b>${esc(p.title)}</b>
     <div class="chips"><span class="chip code">${esc(p.name)}</span>${p.style ? `<span class="chip">风格 ${esc(p.style)}</span>` : ""}<span class="chip">${p.shots} 个镜头</span>${p.silent ? `<span class="chip">无口播</span>` : `<span class="chip">配音</span>`}${p.output ? `<span class="chip">有成片</span>` : ""}${p.openNotes ? `<span class="chip" style="color:var(--accent)">${p.openNotes} 条意见未处理</span>` : ""}</div></div>
     <div class="muted">${new Date(p.updated).toLocaleString()}</div></a>`).join("") || `<div class="empty">还没有项目</div>`}</div>`;
-  $("#nb").onclick = (e) => busy(e.target, async () => { const name = $("#nn").value.trim(); await api("/api/new", { name, style: $("#ns").value }); toast("已新建 " + name); location.hash = "#project/" + name; });
+  $("#nb").onclick = (e) => busy(e.target, async () => { const name = $("#nn").value.trim(); await api("/api/new", { name, style: $("#ns").value, template: $("#nt").value, game: $("#ng").value }); toast("已新建 " + name); location.hash = "#project/" + name; });
 }
 
 // ---------- 项目 ----------
 function codexPrompt(p) {
   const open = p.notes.filter((n) => n.status !== "done"), ns = open.filter((n) => n.kind === "newscene");
   let s = `用 mjvideo（MCP）继续做项目「${p.name}」（${p.cfg.title || ""}）。\n`;
+  if (p.cfg.game || p.footage.length) s += `这是一期试玩解说：先读 mjv_guide doc=gameplay。游戏：${p.cfg.game || "（还没选，先问我）"}，用 mjv_games 读资料。录屏：${p.footage.map((f) => `${f.key}（${f.duration}s）`).join("、") || "还没有"}，看 footage/ 里的分析报告和拼图挑高光。我没给稿子，解说由你写。\n`;
   if (p.cfg.style) s += `风格：${p.cfg.style}（主题已写在 project.json 的 theme，可以按美术方案微调）。\n`;
   if (p.refFiles.length) s += `参考素材在 refs/（${p.refFiles.join("、")}），先读 refs/ref_report.md 和拼图，提炼风格，不要照抄。\n`;
   if (Object.keys(p.cfg.images || {}).length) s += `图片素材已登记在 project.json 的 images：${Object.keys(p.cfg.images).join("、")}。\n`;
@@ -83,10 +86,17 @@ async function viewProject(name) {
   app.innerHTML = `<a href="#projects" class="muted">← 项目</a><h1>${esc(cfg.title || p.name)}</h1>
   <div class="chips"><span class="chip code">${esc(p.name)}</span><span class="chip">${cfg.format?.width || 1080}×${cfg.format?.height || 1920}</span>${p.timeline ? `<span class="chip">时长 ${p.timeline.total.toFixed(1)}s</span>` : `<span class="chip">还没有时间轴</span>`}</div>
   <div class="bar">风格 <select id="st"><option value="">（${esc(cfg.style || cfg.theme?.name || "自定义 / 默认")}）</option>${STYLES.map((s) => `<option value="${s.name}">${esc(s.title)}</option>`).join("")}</select>
-    <button id="sta">套用风格</button><button id="tl">生成时间轴</button><button class="primary" id="cp">复制给 Codex 的指令</button><button id="rf">刷新</button></div>
+    <button id="sta">套用风格</button>
+    游戏 <select id="gm"><option value="">（不是试玩解说）</option>${GAMES.map((g) => `<option value="${g.slug}" ${g.slug === cfg.game ? "selected" : ""}>${esc(g.name)}</option>`).join("")}</select><button id="tl">配音 + 时间轴</button><button class="primary" id="cp">复制给 Codex 的指令</button><button id="rf">刷新</button></div>
   ${p.output ? `<video class="out" src="${p.output}" controls preload="metadata"></video>` : ""}
   <h2>整体意见</h2>${notesOf("").map(noteHTML).join("")}
   <div class="bar"><textarea id="gn" placeholder="对整条视频的意见，例如：节奏再快一点；配乐高潮不明显"></textarea></div><button data-note="">提交整体意见</button>
+
+  <h2>录屏（试玩解说用）</h2>
+  <div class="drop" data-kind="footage">把无声录屏拖到这里（mp4 / mov / webm / mkv），自动导入并分析高光</div>
+  <p class="guide">长短不限、横竖屏都行。尽量录游戏画面本身（全屏、关掉无关窗口）；同一期可以拖多段。导入后 Codex 会看拼图挑高光、写解说。</p>
+  ${p.footage.map((f) => `<details open><summary><b>${esc(f.key)}</b> · ${f.size} · ${f.duration}s · 高光候选 ${f.candidates.length} 段（${f.candidates.map((c) => `${c.start}–${c.end}s`).join("、")}） · <a href="${f.report}" target="_blank">分析报告</a></summary>
+    <div class="thumbs">${f.sheets.map((s) => `<figure><a href="${s.url}" target="_blank"><img src="${s.url}"></a>${esc(s.kind)} ${s.from}–${s.to}s</figure>`).join("")}</div></details>`).join("")}
 
   <h2>素材</h2><div class="two">
     <div><h3>参考素材（学风格用）</h3>
@@ -117,6 +127,7 @@ async function viewProject(name) {
   $("#rf").onclick = reload;
   $("#cp").onclick = async () => { const t = codexPrompt(p); try { await navigator.clipboard.writeText(t); toast("已复制，粘贴到 Codex 就行"); } catch { prompt("复制下面这段：", t); } };
   $("#sta").onclick = (e) => { const v = $("#st").value; if (!v) return toast("先在下拉里选一个风格"); if (!confirm(`套用「${v}」会覆盖项目现在的主题（theme），确定？`)) return; busy(e.target, async () => { await api("/api/style?name=" + encodeURIComponent(name), { style: v }); toast("已套用，出静帧看看效果"); reload(); }); };
+  $("#gm").onchange = async (e) => { try { await api("/api/game?name=" + encodeURIComponent(name), { slug: e.target.value }); toast(e.target.value ? "已设为 " + e.target.value : "已清除游戏"); } catch (err) { toast(err.message, true); } };
   $("#tl").onclick = (e) => busy(e.target, async () => { const r = await api("/api/timeline?name=" + encodeURIComponent(name), {}); await waitJob(r.job, "时间轴"); toast("时间轴已生成"); reload(); });
   app.querySelectorAll("select.scene").forEach((sel) => sel.onchange = async () => { const id = sel.closest(".shot").dataset.id; try { await api("/api/shot?name=" + encodeURIComponent(name), { id, scene: sel.value }); toast(`${id} 换成 ${sel.value}。注意参数可能要让 Codex 调整`); } catch (e) { toast(e.message, true); } });
   app.querySelectorAll("[data-stills]").forEach((b) => b.onclick = () => busy(b, async () => { const r = await api("/api/stills?name=" + encodeURIComponent(name), { id: b.dataset.stills }); await waitJob(r.job, "出静帧"); reload(); }));
@@ -133,7 +144,7 @@ async function viewProject(name) {
         try {
           const r = await fetch(`/api/upload?name=${encodeURIComponent(name)}&kind=${d.dataset.kind}&file=${encodeURIComponent(f.name)}`, { method: "POST", body: f }).then((x) => x.json());
           if (r.error) throw new Error(r.error);
-          if (r.job) { d.textContent = `分析 ${f.name}…`; await waitJob(r.job, "参考分析"); }
+          if (r.job) { d.textContent = d.dataset.kind === "footage" ? `导入并分析 ${f.name}（长录屏要等一会儿）…` : `分析 ${f.name}…`; await waitJob(r.job, d.dataset.kind === "footage" ? "导入录屏" : "参考分析"); }
           toast(`${f.name} 已上传${r.key ? `，登记为图片「${r.key}」` : "并分析完"}`);
         } catch (err) { toast(err.message, true); }
       }
@@ -147,7 +158,7 @@ async function route() {
   const h = location.hash.slice(1) || "styles", [tab, arg] = h.split("/");
   document.querySelectorAll("nav a").forEach((a) => a.classList.toggle("on", a.dataset.tab === (tab === "project" ? "projects" : tab)));
   try {
-    if (!STYLES.length) [STYLES, SCENES] = await Promise.all([api("/api/styles"), api("/api/scenes")]);
+    if (!STYLES.length) [STYLES, SCENES, GAMES] = await Promise.all([api("/api/styles"), api("/api/scenes"), api("/api/games")]);
     if (tab === "scenes") viewScenes(); else if (tab === "projects") await viewProjects(); else if (tab === "project") await viewProject(decodeURIComponent(arg)); else viewStyles();
   } catch (e) { app.innerHTML = `<div class="empty">出错了：${esc(e.message)}</div>`; }
 }

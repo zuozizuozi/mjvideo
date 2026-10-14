@@ -1,0 +1,27 @@
+{
+  "slug": "last-8-minutes",
+  "name": "最后8分钟 · LAST 8 MINUTES",
+  "intro": "国庆黄金周，猫咪麻酱睡过头了。她的 G8 高铁 18:08 从喵城站发车，全城都堵在路上，她只有一辆小电驴。你要在车流里穿行、钻胡同、飞跃断桥，8 分钟内赶上车。",
+  "repo": "F:/qks-last-8-minutes",
+  "docs": [
+    "F:/qks-last-8-minutes/README.md",
+    "F:/qks-last-8-minutes/PROGRESS.md"
+  ],
+  "facts": {
+    "singleFile": "最后8分钟.html",
+    "sizeKB": 939,
+    "srcFiles": 7,
+    "srcLines": 3570,
+    "commits": 1,
+    "firstCommit": "2026-10-12",
+    "lastCommit": "2026-10-12",
+    "zeroExternalArt": true
+  },
+  "recentCommits": [
+    "2026-10-12 Import Last 8 Minutes as an offline single-file build"
+  ],
+  "filming": "",
+  "notes": "",
+  "tags": [],
+  "updated": "2026-10-14"
+}

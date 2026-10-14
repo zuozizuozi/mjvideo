@@ -42,7 +42,9 @@ node bin/mjv.mjs build projects/my_topic
 node bin/mjv.mjs promote projects/my_topic <场景名>   # 好场景收进场景库
 ```
 
-**工作台**（看风格和场景、选风格、换场景、写意见、传素材）：双击 `打开工作台.bat`，或 `node bin/mjv.mjs studio`，浏览器打开 http://127.0.0.1:5178 。
+**试玩解说**（给无声录屏，AI 写解说、配音、剪辑、出封面）：`new --template=gameplay` → `footage` → 见 SKILL.md 第 17 节和 `prompts/game_commentary.md`。
+
+**工作台**（看风格和场景、选风格、换场景、写意见、传素材和录屏）：双击 `打开工作台.bat`，或 `node bin/mjv.mjs studio`，浏览器打开 http://127.0.0.1:5178 。
 
 无口播横屏（字幕 + 配乐）：
 ```bash
@@ -71,6 +73,7 @@ mjvideo/
 │  ├─ ref.py                参考素材分析
 │  ├─ common.py             公共函数、字幕切分
 │  └─ port_show.py          把原版 show.js 拆成场景库的迁移脚本（留档）
+├─ games/                   登记过的游戏（mjv game add 生成：实测数据 + 文档路径）
 ├─ styles/                  风格包（每个一个 style.json：主题配色、字体、纹理）
 ├─ templates/               project.example.json、project.vibe.example.json、scene.template.js
 ├─ prompts/                 director.md（编导）、art_director.md（美术方案）、scene_author.md（场景作者）

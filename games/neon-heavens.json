@@ -1,0 +1,26 @@
+{
+  "slug": "neon-heavens",
+  "name": "霓虹九霄 · NEON HEAVENS",
+  "intro": "赛博修仙 · 御剑飞行。 一款浏览器直玩的 3D 御剑射击游戏：脚踏飞剑穿越云海、雷劫云与霓虹天宫，按住扫描锁定、松开万剑齐发，最终在南天门外斩落机甲巨龙「烛龙·零式」。一局约 3–5 分钟，结算按修仙境界评级（练气 → 飞升）。",
+  "repo": "F:/qks-neon-heavens",
+  "docs": [
+    "F:/qks-neon-heavens/README.md"
+  ],
+  "facts": {
+    "singleFile": "霓虹九霄.html",
+    "sizeKB": 807,
+    "srcFiles": 39,
+    "srcLines": 8914,
+    "commits": 1,
+    "firstCommit": "2026-10-12",
+    "lastCommit": "2026-10-12",
+    "zeroExternalArt": true
+  },
+  "recentCommits": [
+    "2026-10-12 Import Neon Heavens from the former combined repo (abb38d4)"
+  ],
+  "filming": "## 拍视频建议\r\n\r\n- **竖屏录制**：手机竖屏可直接游玩，视野自动加宽，适合抖音 / 小红书 / TikTok。\r\n- **出片时刻**：标题页落日剪影 → 冲出雷云 → 穿过霓虹拱桥 → 八卦全息阵 → 南天门结界 → 烛龙盘身（巨龙绕着你螺旋飞行）→ 万剑归宗（120 柄飞剑结成剑阵）。\r\n- **干净画面**：按 `H` 隐藏 HUD，按 `C` 切换「追身 / 侧拍 / 正面」镜头；正面镜头能拍到人物与飘带。\r\n- **战绩图**：结算页「保存战绩图」生成 1080×1350 竖版分享卡，内含胜利瞬间截图、境界朱印与分数。",
+  "notes": "",
+  "tags": [],
+  "updated": "2026-10-14"
+}

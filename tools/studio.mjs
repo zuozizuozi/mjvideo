@@ -21,7 +21,7 @@ export async function studio(ROOT, flags) {
   // ---------- 后台任务 ----------
   const jobs = new Map(); let seq = 0;
   function job(label, args, after) {
-    const id = "j" + ++seq, j = { id, label, status: "running", out: "", result: null };
+    const id = "j" + ++seq, j = { id, label, status: "running", out: "", result: null, isJob: true };
     const ch = spawn(process.execPath, [MJV, ...args], { cwd: ROOT, env: { ...process.env, PYTHONIOENCODING: "utf-8" } });
     const on = (d) => { j.out = (j.out + d).slice(-20000); }; ch.stdout.on("data", on); ch.stderr.on("data", on);
     ch.on("close", async (code) => { try { if (code === 0 && after) j.result = await after(); } catch (e) { j.out += "\n" + e.message; code = 1; } j.status = code === 0 ? "done" : "failed"; });
@@ -77,6 +77,10 @@ export async function studio(ROOT, flags) {
       refFiles: list(refs, /\.(png|jpe?g|webp|mp4|mov|webm|gif)$/i).filter((f) => !/^(sheet|palette)_/.test(f)),
       assets: list(assets, /\.(png|jpe?g|webp|gif)$/i).map((f) => ({ name: f, url: purl(name, "assets/" + f) })),
       design: fs.existsSync(path.join(d, "design.md")) ? fs.readFileSync(path.join(d, "design.md"), "utf8") : "",
+      footage: list(path.join(d, "footage"), /^[^_].*\.json$|^.+\.json$/).filter((f) => !f.endsWith("_report.json")).map((f) => {
+        const m = readJSON(path.join(d, "footage", f)); if (!m || !m.sheets) return null;
+        return { key: m.key, duration: m.duration, size: `${m.width}×${m.height}`, candidates: m.candidates, sheets: m.sheets.map((s) => ({ kind: s.kind, from: s.from, to: s.to, url: purl(name, "footage/" + s.file) })), report: purl(name, `footage/${m.key}_report.md`) };
+      }).filter(Boolean),
     };
   }
   function stillTimes(d, id) {
@@ -97,11 +101,16 @@ export async function studio(ROOT, flags) {
     "GET /api/styles": () => styles(),
     "GET /api/scenes": () => { sceneCache = null; return scenes(); },
     "GET /api/projects": () => projects(),
+    "GET /api/games": () => { const d = path.join(ROOT, "games"); return fs.existsSync(d) ? fs.readdirSync(d).filter((f) => f.endsWith(".json")).map((f) => readJSON(path.join(d, f))) : []; },
+    "POST /api/game": (q, b) => { const d = projDir(q.name), p = path.join(d, "project.json"), cfg = readJSON(p); cfg.game = b.slug || ""; writeJSON(p, cfg); return { ok: true }; },
     "GET /api/project": (q) => project(q.name),
     "POST /api/new": (q, b) => {
       if (!/^[\w-]+$/.test(b.name || "")) throw new Error("项目名只能用字母、数字、下划线、横线");
-      const r = spawnSync(process.execPath, [MJV, "new", path.join(PROJECTS, b.name), ...(b.style ? [`--style=${b.style}`] : ["--vibe"])], { cwd: ROOT, encoding: "utf8" });
-      if (r.status !== 0) throw new Error(r.stderr || r.stdout); return { ok: true };
+      const kind = b.template === "gameplay" ? ["--template=gameplay"] : [];
+      const r = spawnSync(process.execPath, [MJV, "new", path.join(PROJECTS, b.name), ...kind, ...(b.style ? [`--style=${b.style}`] : kind.length ? [] : ["--vibe"])], { cwd: ROOT, encoding: "utf8" });
+      if (r.status !== 0) throw new Error(r.stderr || r.stdout);
+      if (b.game) { const p = path.join(PROJECTS, b.name, "project.json"), cfg = readJSON(p); cfg.game = b.game; writeJSON(p, cfg); }
+      return { ok: true };
     },
     "POST /api/style": (q, b) => {         // 套用风格包：主题、字体写进 project.json（会覆盖原来的 theme）
       const d = projDir(q.name), p = path.join(d, "project.json"), cfg = readJSON(p), st = readJSON(path.join(ROOT, "styles", b.style, "style.json"));
@@ -119,7 +128,7 @@ export async function studio(ROOT, flags) {
       else { if (!String(b.text || "").trim()) throw new Error("意见是空的"); rv.notes.push({ id: "n" + Date.now().toString(36), shot: b.shot || "", kind: b.kind || "change", text: String(b.text).trim(), status: "open", by: "studio", time: new Date().toISOString() }); }
       writeJSON(p, rv); return { ok: true };
     },
-    "POST /api/timeline": (q) => { const d = projDir(q.name); return job("时间轴", ["timeline", d]); },
+    "POST /api/timeline": (q) => { const d = projDir(q.name); return job("配音和时间轴", ["prep", d]); },
     "POST /api/stills": (q, b) => {
       const d = projDir(q.name);
       if (!fs.existsSync(path.join(d, "build", "timeline.json"))) throw new Error("还没有时间轴，先点「生成时间轴」");
@@ -129,16 +138,18 @@ export async function studio(ROOT, flags) {
     "GET /api/job": (q) => { const j = jobs.get(q.id); if (!j) throw new Error("没有任务"); return { id: j.id, label: j.label, status: j.status, out: j.out.slice(-3000) }; },
   };
   async function upload(req, q) {           // 上传：原始请求体，文件名放在 ?file=，kind=refs（参考素材，传完自动分析）或 assets（图片素材）
-    const d = projDir(q.name), kind = q.kind === "refs" ? "refs" : "assets", file = path.basename(String(q.file || "")).replace(/[^\w.一-鿿-]+/g, "_");
+    const d = projDir(q.name), kind = q.kind === "refs" ? "refs" : q.kind === "footage" ? "footage/src" : "assets", file = path.basename(String(q.file || "")).replace(/[^\w.一-鿿-]+/g, "_");
     if (!file || !/\.(png|jpe?g|webp|gif|mp4|mov|webm|mkv)$/i.test(file)) throw new Error("只支持图片和视频");
     if (kind === "assets" && !/\.(png|jpe?g|webp|gif)$/i.test(file)) throw new Error("图片素材只支持图片");
+    if (kind === "footage/src" && !/\.(mp4|mov|webm|mkv)$/i.test(file)) throw new Error("录屏只支持 mp4 / mov / webm / mkv");
     const dir = path.join(d, kind); fs.mkdirSync(dir, { recursive: true });
     const dst = path.join(dir, file); let size = 0;
-    await new Promise((res, rej) => { const ws = fs.createWriteStream(dst); req.on("data", (c) => { size += c.length; if (size > 500e6) { req.destroy(); rej(new Error("文件超过 500MB")); } }); req.pipe(ws); ws.on("finish", res); ws.on("error", rej); });
+    await new Promise((res, rej) => { const ws = fs.createWriteStream(dst); req.on("data", (c) => { size += c.length; if (size > 4e9) { req.destroy(); rej(new Error("文件超过 4GB")); } }); req.pipe(ws); ws.on("finish", res); ws.on("error", rej); });
     if (kind === "assets") {               // 图片素材自动登记进 project.json 的 images（名字 = 文件名去掉扩展名）
       const p = path.join(d, "project.json"), cfg = readJSON(p); cfg.images = cfg.images || {}; cfg.images[path.parse(file).name] = "assets/" + file; writeJSON(p, cfg);
       return { ok: true, key: path.parse(file).name };
     }
+    if (kind === "footage/src") return job("导入录屏 " + file, ["footage", d, dst]);
     return job("参考分析 " + file, ["ref", d, dst]);
   }
   function serveFile(req, res, abs) {
@@ -158,10 +169,10 @@ export async function studio(ROOT, flags) {
     const send = (code, obj) => { res.writeHead(code, { "Content-Type": "application/json; charset=utf-8" }); res.end(JSON.stringify(obj)); };
     try {
       if (req.headers.origin && !/^http:\/\/(127\.0\.0\.1|localhost):\d+$/.test(req.headers.origin)) return send(403, { error: "只接受本机页面的请求" });
-      if (key === "POST /api/upload") { const r = await upload(req, q); return send(200, r.id ? { job: r.id } : r); }
+      if (key === "POST /api/upload") { const r = await upload(req, q); return send(200, r.isJob ? { job: r.id } : r); }
       if (api[key]) {
         let body = {}; if (req.method === "POST") { const ch = []; for await (const c of req) ch.push(c); const s = Buffer.concat(ch).toString("utf8"); body = s ? JSON.parse(s) : {}; }
-        const r = await api[key](q, body); return send(200, r && r.id && r.status ? { job: r.id } : r);
+        const r = await api[key](q, body); return send(200, r && r.isJob ? { job: r.id } : r);
       }
       if (u.pathname.startsWith("/r/")) { const abs = path.join(ROOT, ...decodeURIComponent(u.pathname.slice(3)).split("/")); if (!inside(ROOT, abs)) return send(403, { error: "路径不允许" }); return serveFile(req, res, abs); }
       if (u.pathname.startsWith("/p/")) { const [, , name, ...rest] = u.pathname.split("/"); const d = projDir(decodeURIComponent(name)); const abs = path.join(d, ...rest.map(decodeURIComponent)); if (!inside(d, abs)) return send(403, { error: "路径不允许" }); return serveFile(req, res, abs); }

@@ -39,7 +39,7 @@ export async function previews(ROOT, flags) {
   if (flags.only !== "styles") {
     const PD = path.join(ROOT, "previews_src.json");          // 可选：手动指定某个场景用哪个项目的哪个镜头
     const manual = fs.existsSync(PD) ? read(PD) : {};
-    const projects = [SHOW, ...fs.readdirSync(path.join(ROOT, "projects")).map((p) => path.join(ROOT, "projects", p))]
+    const projects = [SHOW, path.join(ROOT, "studio", "showcase_gameplay"), ...fs.readdirSync(path.join(ROOT, "projects")).map((p) => path.join(ROOT, "projects", p))]
       .filter((d) => fs.existsSync(path.join(d, "project.json")));
     const outDir = path.join(ROOT, "engine", "scenes", "_previews"); fs.mkdirSync(outDir, { recursive: true });
     for (const f of fs.readdirSync(path.join(ROOT, "engine", "scenes")).filter((x) => x.endsWith(".js")).sort()) {

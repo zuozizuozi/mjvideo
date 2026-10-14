@@ -1,0 +1,33 @@
+{
+  "title": "游戏名｜一句话钩子（试玩解说模板）",
+  "game": "",
+  "format": { "width": 1080, "height": 1920, "fps": 30 },
+  "voice": { "engine": "edge", "voice": "zh-CN-YunxiNeural", "rate": "+6%" },
+  "timing": { "lead": 0.3, "gap": 0.3, "tail": 1.5 },
+  "overlay": { "brand": null, "styleLabel": false, "subtitles": true, "avatar": null },
+  "music": { "enabled": true, "volume": 0.2, "bpm": 100 },
+  "mix": { "sfx_volume": 0.3, "loudness": -14 },
+  "fonts": [ { "family": "SongB", "src": "assets/fonts/NotoSerifSC-Bold.otf" }, { "family": "SongH", "src": "assets/fonts/NotoSerifSC-Black.otf" } ],
+  "fontsToLoad": ["40px SongB", "40px SongH"],
+  "theme": {},
+  "videos": {},
+  "images": {},
+  "transitionHalf": 0.25,
+  "transitionSfx": { "kind": "whoosh", "vol": 0.3 },
+  "output_name": "成片.mp4",
+  "shots": [
+    { "id": "s01", "scene": "footage_play", "label": "钩子", "music": "synth", "transition": "cut",
+      "text": "这一段，是 AI 用代码做出来的游戏。",
+      "params": { "video": "录屏名", "in": 0, "layout": "fill", "focus": [0.5, 0.5], "zoom": { "from": [1.15, 0.5, 0.5], "to": [1.0, 0.5, 0.5] } } },
+    { "id": "s02", "scene": "footage_play", "label": "玩法", "music": "default", "transition": "slide",
+      "text": "玩法一句话说清楚：做什么、怎么操作、目标是什么。",
+      "params": { "video": "录屏名", "in": 10, "layout": "fit", "title": { "text": "游戏名", "sub": "一句话类型" }, "badge": "实机录屏",
+                  "annotations": [ { "at": "操作", "dur": 2, "type": "box", "rect": [0.4, 0.6, 0.2, 0.2], "text": "标注文字" } ] } },
+    { "id": "s03", "scene": "stat_cards", "label": "数据", "music": "default", "transition": "fade",
+      "text": "整个游戏只有一个网页文件，没有一张外部美术图片。",
+      "params": { "title": "它是怎么做出来的", "items": [ { "value": 8510, "unit": "行", "label": "代码" }, { "value": 0, "unit": "张", "label": "外部美术图片" }, { "value": 0.7, "unit": "MB", "label": "整个游戏", "decimals": 1 } ] } },
+    { "id": "s04", "scene": "footage_play", "label": "收尾", "music": "film",
+      "text": "一句话总结 AI 现在能做到什么程度。",
+      "params": { "video": "录屏名", "in": 20, "layout": "fit", "freezeAt": 2.5 } }
+  ]
+}

@@ -19,7 +19,7 @@ import { fileURLToPath } from "node:url";
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const PROJECTS = path.resolve(process.env.MJV_PROJECTS || path.join(ROOT, "projects"));
 const DEFAULT_WAIT = Number(process.env.MJV_MCP_WAIT || 3.5);
-const VERSION = "0.4.0";
+const VERSION = "0.5.0";
 const log = (...a) => process.stderr.write("[mjvideo-mcp] " + a.join(" ") + "\n");   // stdout 只能写协议消息
 
 // ---------------- 工具定义 ----------------
@@ -29,20 +29,29 @@ const TOOLS = [
   { name: "mjv_guide",
     description: "读取 mjvideo 引擎的完整使用手册（SKILL.md）：工作流、场景编写规范、project.json 格式、无口播 Vibe 风格、常见错误。第一次用本引擎时必须先读。",
     inputSchema: { type: "object", properties: {
-      doc: { type: "string", enum: ["skill", "visual", "art", "case"], description: "skill 使用手册（默认）/ visual 视觉手法（怎么把一句话变成画面、比喻库、动效、运镜、字幕样式、画风、什么时候问用户）/ art 美术指导流程 / case EP09 案例" },
+      doc: { type: "string", enum: ["skill", "visual", "art", "case", "gameplay"], description: "gameplay 试玩解说指南 / skill 使用手册（默认）/ visual 视觉手法（怎么把一句话变成画面、比喻库、动效、运镜、字幕样式、画风、什么时候问用户）/ art 美术指导流程 / case EP09 案例" },
       section: { type: "string", description: "只看某一节：填节号（如 \"2\"、\"11\"）或关键词；不填返回全文" } } } },
   { name: "mjv_scenes",
     description: "列出场景库（以及某个项目自带的场景）：名字、用途说明、尺寸、可调参数和 cues。选场景前先看这个。",
     inputSchema: { type: "object", properties: { project: projectProp } } },
   { name: "mjv_new_project",
-    description: "新建一个视频项目，返回项目路径和 project.json 模板。vibe=true 用无口播横屏模板（字幕 + 配乐），否则用竖屏配音模板。style=风格包名（见 mjv_styles）会把该风格的主题写进 project.json，之后可以随意改。",
-    inputSchema: { type: "object", properties: { name: { type: "string", description: "项目名，只用字母数字下划线" }, vibe: { type: "boolean" }, style: { type: "string", description: "风格包名，如 paper / neon / swiss / dark-gold" } }, required: ["name"] } },
+    description: "新建一个视频项目，返回项目路径和 project.json 模板。template=gameplay：试玩解说（竖屏、配音、录屏片段，见 mjv_guide doc=gameplay）；vibe=true：无口播横屏（字幕 + 配乐）；都不写：竖屏配音讲解。style=风格包名（见 mjv_styles）会把该风格的主题写进 project.json。",
+    inputSchema: { type: "object", properties: { name: { type: "string", description: "项目名，只用字母数字下划线" }, template: { type: "string", enum: ["gameplay"] }, vibe: { type: "boolean" }, style: { type: "string", description: "风格包名，如 paper / neon / cinema" }, game: { type: "string", description: "试玩解说：游戏 slug（见 mjv_games）" } }, required: ["name"] } },
   { name: "mjv_styles",
     description: "列出风格包（styles/）：名字、气质、适合的话题。风格包是起点，不是终点：选一个后可以在 project.json 的 theme 里改配色、字体、纹理，或者完全自己定。",
     inputSchema: { type: "object", properties: {} } },
   { name: "mjv_ref",
     description: "分析参考图 / 参考视频（本机文件路径）：复制到项目 refs/，生成关键帧拼图（视频按时间取 24 帧）、主色和强调色色板、镜头切换节奏和运动量报告，并把拼图和色板作为图片返回。用来提炼风格写美术方案，不是照抄。录屏素材最好先裁掉手机界面。",
     inputSchema: { type: "object", properties: { project: projectProp, files: { type: "array", items: { type: "string" }, description: "参考素材的绝对路径（图片、视频或文件夹）" }, wait_seconds: waitProp }, required: ["project", "files"] } },
+  { name: "mjv_footage",
+    description: "导入一段录屏（本机路径）到项目：生成可精确取帧的代理、分析每秒运动量 / 镜头切换 / 静止段 / 高光候选，返回分析报告和带时间、10% 坐标网格的关键帧拼图（图片）。写试玩解说前用它'看'录屏。长录屏会跑一阵子，没跑完返回 job_id。",
+    inputSchema: { type: "object", properties: { project: projectProp, file: { type: "string", description: "录屏文件的绝对路径" }, key: { type: "string", description: "给这段录屏起的名字（字母数字下划线），不填用文件名" }, wait_seconds: waitProp }, required: ["project", "file"] } },
+  { name: "mjv_games",
+    description: "已登记的游戏：名字、一句话介绍、单文件大小、源码行数、提交次数和日期、文档路径（README / DESIGN / PROGRESS，写解说前要读）、拍视频建议。给 slug 返回单个游戏的完整信息。新游戏用 mjv_run 以外的命令行 `node bin/mjv.mjs game add <仓库目录>` 登记，或在这里传 repo 登记。",
+    inputSchema: { type: "object", properties: { slug: { type: "string" }, repo: { type: "string", description: "要登记 / 刷新的游戏仓库目录（绝对路径）" } } } },
+  { name: "mjv_cover",
+    description: "生成封面：从录屏里取一帧，叠大字标题，输出 output/封面_3x4.jpg 和 封面_9x16.jpg，并把 3:4 那张作为图片返回。标题用 | 换行，每行 ≤ 8 字。",
+    inputSchema: { type: "object", properties: { project: projectProp, video: { type: "string" }, t: { type: "number", description: "取录屏第几秒" }, title: { type: "string" }, sub: { type: "string" } }, required: ["project", "title"] } },
   { name: "mjv_history",
     description: "列出以往所有项目的长相：标题、风格包、后期画风、主配色、美术方案摘要（design.md）。写新美术方案前用它做防重复检查：新方案要和以往每一期在视觉概念、主配色、动效语言、招牌镜头手法四项里至少三项不同。",
     inputSchema: { type: "object", properties: {} } },
@@ -136,7 +145,7 @@ function sheet(files, out) {           // 把若干静帧拼成每行 3 张、�
 
 const handlers = {
   async mjv_guide({ section, doc } = {}) {
-    const DOCS = { skill: "SKILL.md", visual: "docs/视觉手法.md", art: "prompts/art_director.md", case: "docs/案例_EP09.md" };
+    const DOCS = { skill: "SKILL.md", visual: "docs/视觉手法.md", art: "prompts/art_director.md", case: "docs/案例_EP09.md", gameplay: "prompts/game_commentary.md" };
     const md = fs.readFileSync(path.join(ROOT, DOCS[doc || "skill"] || DOCS.skill), "utf8");
     const info = `引擎目录：${ROOT}\n项目目录：${PROJECTS}\n（改 project.json 和场景代码用你自己的文件编辑工具；跑命令用 mjv_run / mjv_stills）\n\n`;
     if (!section) return { content: [text(info + md)] };
@@ -150,14 +159,21 @@ const handlers = {
     const args = ["scenes"]; if (project) args.push(resolveProject(project));
     return waitJob(startJob("scenes", args), 20);
   },
-  async mjv_new_project({ name, vibe, style }) {
+  async mjv_new_project({ name, vibe, style, template, game }) {
     if (!/^[\w-]+$/.test(name || "")) return fail("项目名只能用字母、数字、下划线、横线");
     if (style && !/^[\w-]+$/.test(style)) return fail("风格包名不合法");
     const pdir = path.join(PROJECTS, name);
-    const job = startJob("new", ["new", pdir, ...(vibe ? ["--vibe"] : []), ...(style ? [`--style=${style}`] : [])]);
+    const job = startJob("new", ["new", pdir, ...(vibe ? ["--vibe"] : []), ...(style ? [`--style=${style}`] : []), ...(template ? [`--template=${template}`] : [])]);
     await job.done;
     if (job.status !== "done") return jobReport(job);
-    const next = vibe || style ? `下一步（按顺序）：
+    if (game) { const pj = path.join(pdir, "project.json"), c = JSON.parse(fs.readFileSync(pj, "utf8")); c.game = game; fs.writeFileSync(pj, JSON.stringify(c, null, 2)); }
+    const next = template === "gameplay" ? `下一步（试玩解说，按 mjv_guide doc=gameplay 的流程）：
+1. mjv_games 读游戏资料（slug ${game || "?"}），读它的 README / DESIGN / PROGRESS。
+2. mjv_footage 导入用户给的录屏，看报告和拼图，挑高光。
+3. 写分镜：每个镜头一句解说（text）+ 用哪段录屏（params.in）+ 版式 / 标注；穿插 stat_cards / milestone_timeline / doc_quote 讲制作过程。
+4. 配音 tts → timeline → check → mjv_stills 抽帧核对"画面和解说对不对得上"。
+5. 把脚本和静帧发给用户确认（用户说"直接出"就跳过）→ render → audio → mux → validate → mjv_cover → 写标题和发布文案。
+用户可能在工作台里留了意见：随时用 mjv_notes 看。` : vibe || style ? `下一步（按顺序）：
 1. 写文案分镜（每个镜头的 lines），给用户确认。
 2. 美术方案：读 mjv_guide doc=art（流程）和 doc=visual（比喻库、动效、运镜、画风），用 mjv_history 做防重复检查，用 mjv_styles 看风格包。
    给用户 2–3 个差别明显的方案，每个先在一两个关键镜头上做出来，用 mjv_stills 出静帧一起给用户看，**等用户选**。
@@ -179,6 +195,32 @@ const handlers = {
       return outs;
     };
     return waitJob(startJob(`ref ${path.basename(pdir)}`, ["ref", pdir, ...list], { after }), wait_seconds);
+  },
+  async mjv_footage({ project, file, key, wait_seconds }) {
+    const pdir = resolveProject(project), f = path.resolve(file || "");
+    if (!fs.existsSync(f)) return fail("找不到录屏：" + f);
+    const k = String(key || path.parse(f).name).replace(/[^\w\u4e00-\u9fff-]+/g, "_").slice(0, 40);
+    const after = async () => {
+      const dir = path.join(pdir, "footage"), meta = JSON.parse(fs.readFileSync(path.join(dir, k + ".json"), "utf8"));
+      const outs = [text(fs.readFileSync(path.join(dir, k + "_report.md"), "utf8"))];
+      const pick = [...meta.sheets.filter((x) => x.kind === "全片概览").slice(0, 5), ...meta.sheets.filter((x) => x.kind !== "全片概览").slice(0, 4)];
+      for (const sh of pick) outs.push(text(`${sh.kind}：${sh.file}（${sh.from}–${sh.to}s）`), { type: "image", data: fs.readFileSync(path.join(dir, sh.file)).toString("base64"), mimeType: "image/jpeg" });
+      const rest = meta.sheets.length - pick.length; if (rest > 0) outs.push(text(`另有 ${rest} 张拼图在 ${dir}，需要时用文件工具读。`));
+      return outs;
+    };
+    return waitJob(startJob(`footage ${k}`, ["footage", pdir, f, `--key=${k}`], { after }), wait_seconds ?? 20);
+  },
+  async mjv_games({ slug, repo }) {
+    if (repo) { const j = startJob("game add", ["game", "add", path.resolve(repo)]); await j.done; if (j.status !== "done") return jobReport(j); }
+    const dir = path.join(ROOT, "games"), all = fs.existsSync(dir) ? fs.readdirSync(dir).filter((f) => f.endsWith(".json")).map((f) => JSON.parse(fs.readFileSync(path.join(dir, f), "utf8"))) : [];
+    if (slug) { const g = all.find((x) => x.slug === slug); return g ? { content: [text(JSON.stringify(g, null, 2) + "\n\n写解说前读这些文档：" + g.docs.join("、"))] } : fail("没有登记 " + slug); }
+    return { content: [text(all.map((g) => `- ${g.slug}：${g.name}｜${g.facts.sizeKB ?? "?"} KB 单文件，${g.facts.srcLines} 行源码，${g.facts.commits} 次提交（${g.facts.firstCommit} → ${g.facts.lastCommit}）${g.facts.zeroExternalArt ? "，零外部美术" : ""}\n  ${g.intro}`).join("\n") || "还没有登记的游戏。")] };
+  },
+  async mjv_cover({ project, video, t, title, sub }) {
+    const pdir = resolveProject(project), args = ["cover", pdir, `--title=${title}`];
+    if (video) args.push(`--video=${video}`); if (t != null) args.push(`--t=${t}`); if (sub) args.push(`--sub=${sub}`);
+    const after = async () => { const f = path.join(pdir, "output", "封面_3x4.jpg"); return [{ type: "image", data: fs.readFileSync(f).toString("base64"), mimeType: "image/jpeg" }]; };
+    return waitJob(startJob("cover", args, { after }), 30);
   },
   async mjv_history() {
     const rows = [];

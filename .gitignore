@@ -15,3 +15,5 @@ __pycache__/
 styles/*/_build/
 studio/showcase/build/
 studio/showcase/output/
+studio/showcase_gameplay/build/
+studio/showcase_gameplay/output/

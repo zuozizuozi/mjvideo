@@ -81,9 +81,9 @@ const ready = () => {
 const over = (img, alpha, mode) => { g.globalAlpha = alpha; g.globalCompositeOperation = mode; g.drawImage(img, 0, 0); g.globalCompositeOperation = "source-over"; g.globalAlpha = 1; };
 
 const base = window.seek;
-window.seek = (t) => {
+window.seek = async (t) => {
   ready();
-  base(P.fps ? Math.floor(t * P.fps + 1e-6) / P.fps : t);                      // 降帧：手绘动画"一拍二"
+  await base(P.fps ? Math.floor(t * P.fps + 1e-6) / P.fps : t);                      // 降帧：手绘动画"一拍二"
   bx.clearRect(0, 0, W, H); bx.drawImage(main, 0, 0);
   g.save();
   if (turb) turb.setAttribute("seed", String(P.boilFps ? 1 + Math.floor(t * P.boilFps) % 997 : 1));

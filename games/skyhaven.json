@@ -1,0 +1,43 @@
+{
+  "slug": "skyhaven",
+  "name": "空岛日和 · Skyhaven",
+  "intro": "云海之上的一块小浮岛。 随手点一下，房子就“啵”地长出来；相邻的建筑自动连成拱桥、台阶、连排屋顶。时间流逝，常春藤爬上墙，树越长越高，居民坐小飞艇搬来。这是一座会自己慢慢变美的小镇。",
+  "repo": "F:/qks-skyhaven",
+  "docs": [
+    "F:/qks-skyhaven/README.md",
+    "F:/qks-skyhaven/DESIGN.md",
+    "F:/qks-skyhaven/PROGRESS.md",
+    "F:/qks-skyhaven/docs"
+  ],
+  "facts": {
+    "singleFile": "空岛日和.html",
+    "sizeKB": 715,
+    "srcFiles": 47,
+    "srcLines": 8557,
+    "commits": 15,
+    "firstCommit": "2026-10-11",
+    "lastCommit": "2026-10-12",
+    "zeroExternalArt": true
+  },
+  "recentCommits": [
+    "2026-10-12 Restore the pre-regrade sky (fixes flicker), desktop pan without right-drag",
+    "2026-10-12 Split repo: Skyhaven moves to the root, Neon Heavens to qks-neon-heavens",
+    "2026-10-12 fix(sky): 复核后调整——空隙像天空不像海、云边柔和圆润、天蓝不偏青、夜里不发暗",
+    "2026-10-11 feat(sky): 吉卜力式饱和晴天——天空、雾、云海重新调色并有体积",
+    "2026-10-11 perf(town): 去掉远圈每帧强制重建；连续补升土地之间留间隔",
+    "2026-10-11 fix(island): 补上丢失的扩张、跳过区块的透明地面；盖房动画垫地面；回放按钮与重入",
+    "2026-10-11 fix(island): 新升起的土地有时透明（延时回放里尤其明显）",
+    "2026-10-11 fix(ui): 高像素密度手机界面缩小、点击错位、右侧和底部残留条",
+    "2026-10-11 fix(mobile): map touches to canvas coordinates, lock page zoom, show full wish text",
+    "2026-10-11 空岛日和 M5 传播：延时回放、分享码与参观模式、明信片、圆舞曲背景音乐、新手引导、单文件构建、README",
+    "2026-10-11 空岛日和 M4 居民与目标：居民、小飞艇、岛屿扩张、海鸥、特殊建筑、晾衣布、居民愿望与解锁、云鲸",
+    "2026-10-11 空岛日和 M3 活起来：天气、草花与树的生长、建筑老化、离线补算、自动存档、环境声",
+    "2026-10-11 空岛日和 M2 建筑语汇：拱桥拱廊、外侧台阶、木码头、塔楼、烟囱炊烟、阳台花盆、老虎窗、局部重建优化",
+    "2026-10-11 空岛日和 M1 手感原型：有机网格、浮岛云海、点击建造与长按拆除、自动墙与连排屋顶、生长动画与钢琴音、画布界面",
+    "2026-10-11 Initial commit: 霓虹九霄 + 空岛日和 design spec"
+  ],
+  "filming": "",
+  "notes": "",
+  "tags": [],
+  "updated": "2026-10-14"
+}

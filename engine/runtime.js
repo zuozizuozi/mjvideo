@@ -15,6 +15,25 @@ const REPORT = { errors: [], subtitles: [], scenes: [], allowDark: Object.values
 const sfxAbs = (t, kind, vol = 1) => SFX.push({ t: +t.toFixed(3), kind, vol });
 const P = (id) => PARAS.find((p) => p.id === id);
 
+// ---------- 视频素材（project.json 的 videos，由 mjv footage 生成的全关键帧代理文件）----------
+// 场景在 create 里调用 ctx.useVideo(名字, (u) => 源视频秒数) 登记"镜头内时间 → 源视频时间"的映射，拿到一个 <video>。
+// 每画一帧之前，引擎先把这个镜头用到的视频精确跳到对应时刻（等 seeked），场景里直接 c.drawImage(video, …)。
+const VIDUSE = {};                                        // 镜头 id → [{ el, map }]
+const vidEls = [];
+function useVideo(shotId, key, map) {
+  const src = document.querySelector(`video.mjvid[data-key="${key}"]`);
+  if (!src) throw new Error(`没有登记视频「${key}」（project.json 的 videos；用 mjv footage 导入）`);
+  const el = document.createElement("video"); el.src = src.src; el.muted = true; el.preload = "auto"; el.playsInline = true; el.style.display = "none";
+  document.body.appendChild(el); vidEls.push(el);
+  (VIDUSE[shotId] = VIDUSE[shotId] || []).push({ el, map });
+  return el;
+}
+function seekVideo(el, time) {
+  const d = el.duration || 0, tt = Math.max(0, Math.min(time, d ? d - 0.02 : time));
+  if (el.readyState >= 2 && Math.abs(el.currentTime - tt) < 0.0005) return Promise.resolve();
+  return new Promise((res) => { const done = () => { el.removeEventListener("seeked", done); res(); }; el.addEventListener("seeked", done); el.currentTime = tt; setTimeout(done, 8000); });
+}
+
 function cueOf(id, phrase, nth = 0) {          // 口播里某个词在本镜头内的相对时间
   const p = P(id); let k = -1;
   for (let i = 0; i <= nth; i++) k = p.text.indexOf(phrase, k + 1);
@@ -43,6 +62,7 @@ for (const shot of SHOTS) {
     shotCount: SHOTS.length, shotIndex: ORDER.indexOf(shot.id),
     lines: p.lines || [],                                           // 无口播模式：本镜头每句字幕（镜头内秒数），配合 MJ.lib.caption 画
     thumbs,                                                         // 其他镜头的缩略图（needsThumbs 的场景用）
+    useVideo: (key, map) => useVideo(shot.id, key, map),            // 录屏素材：返回 <video>，见上面的说明
   };
   try { DRAW[shot.id] = def.create(ctx); META[shot.id] = def; DESIGN[shot.id] = [dw, dh]; }
   catch (e) { REPORT.errors.push(`[${shot.id}] 场景「${shot.scene}」初始化失败：${e.message}`); }
@@ -121,7 +141,7 @@ function overlays(t, idx) {
 }
 
 // ---------- 渲染入口 ----------
-window.seek = (t) => {
+function drawFrame(t) {
   let i = ORDER.findIndex((id, k) => t < bounds[k]); if (i < 0) i = ORDER.length - 1;
   const prevB = i > 0 ? bounds[i - 1] : -99;
   if (i > 0 && t < prevB + TR && TRANS[i - 1] !== "cut") {
@@ -132,7 +152,19 @@ window.seek = (t) => {
   overlays(t, i);
   const f = Math.max(1 - pr(t, 0, 0.4), pr(t, TOTAL - 0.8, 0.8));
   if (f > 0) { g.fillStyle = `rgba(0,0,0,${f})`; g.fillRect(0, 0, W, H); }
-};
+}
+
+// 渲染入口：先把这一帧用到的视频跳到位（镜头本身 + 转场时的相邻镜头），再画。返回 Promise。
+async function prepVideos(t) {
+  if (!vidEls.length) return;
+  let i = ORDER.findIndex((id, k) => t < bounds[k]); if (i < 0) i = ORDER.length - 1;
+  const act = [i]; if (i > 0 && t < bounds[i - 1] + TR) act.push(i - 1); if (i < ORDER.length - 1 && t > bounds[i] - TR) act.push(i + 1);
+  const jobs = [];
+  for (const k of act) { const id = ORDER[k]; for (const v of VIDUSE[id] || []) jobs.push(seekVideo(v.el, v.map(t - P(id).start))); }
+  await Promise.all(jobs);
+}
+window.seek = async (t) => { await prepVideos(t); drawFrame(t); };
+
 window.SFX = SFX;
 window.MJ_BOUNDS = bounds;
 window.REPORT = REPORT;
@@ -140,6 +172,10 @@ window.ready = (async () => {
   for (const f of PROJ.fontsToLoad || []) { try { await document.fonts.load(f); } catch (e) {} }
   await document.fonts.ready;
   if (OV.avatar && !avatarImg.complete) await new Promise((r) => { avatarImg.onload = avatarImg.onerror = r; });
+  for (const el of vidEls) {                                           // 视频：等元数据和第一帧
+    if (el.readyState < 2) await new Promise((r) => { el.addEventListener("loadeddata", r, { once: true }); el.addEventListener("error", r, { once: true }); setTimeout(r, 15000); });
+    if (el.error || !el.videoWidth) REPORT.errors.push(`视频加载失败：${el.src}（只支持 mjv footage 生成的 H.264 代理）`);
+  }
   for (const im of document.querySelectorAll("img.mjimg")) {        // project.json 的 images：全部加载完再开始渲染
     if (!im.complete) await new Promise((r) => { im.onload = im.onerror = r; });
     if (!im.naturalWidth) REPORT.errors.push(`图片「${im.dataset.key}」加载失败：${im.src}`);
@@ -162,7 +198,7 @@ window.ready = (async () => {
     for (const s of TL.subs) { const w = g.measureText(s.text).width + 64; REPORT.subtitles.push({ text: s.text, width: Math.round(w), max: W - 80, ok: w <= W - 80 }); }
   }
   SFX.sort((a, b) => a.t - b.t);
-  try { window.seek(0); } catch (e) { REPORT.errors.push("seek(0) 失败：" + e.message); }
+  try { await window.seek(0); } catch (e) { REPORT.errors.push("seek(0) 失败：" + e.message); }
   return true;
 })();
 })();

@@ -1,0 +1,163 @@
+{
+  "title": "试玩解说样张",
+  "format": {
+    "width": 1080,
+    "height": 1920,
+    "fps": 30
+  },
+  "voice": {
+    "engine": "none"
+  },
+  "timing": {
+    "lead": 0.3,
+    "gap": 0.3,
+    "tail": 0.5,
+    "pre": 0.3,
+    "lineGap": 0.2,
+    "cps": 7,
+    "linePad": 0.6,
+    "minLine": 1.5
+  },
+  "overlay": {
+    "brand": null,
+    "styleLabel": false,
+    "subtitles": "scene",
+    "avatar": null
+  },
+  "fonts": [
+    {
+      "family": "SongB",
+      "src": "assets/fonts/NotoSerifSC-Bold.otf"
+    },
+    {
+      "family": "SongH",
+      "src": "assets/fonts/NotoSerifSC-Black.otf"
+    }
+  ],
+  "fontsToLoad": [
+    "40px SongB",
+    "40px SongH"
+  ],
+  "theme": {},
+  "videos": {
+    "sample": "footage/sample.mp4"
+  },
+  "shots": [
+    {
+      "id": "s1",
+      "scene": "footage_play",
+      "transition": "cut",
+      "lines": [
+        {
+          "text": "这条龙是代码画的。",
+          "dur": 4
+        }
+      ],
+      "params": {
+        "video": "sample",
+        "in": 0.2,
+        "layout": "fit",
+        "title": {
+          "text": "霓虹九霄",
+          "sub": "赛博修仙 · 御剑飞行"
+        },
+        "badge": "实机录屏",
+        "annotations": [
+          {
+            "at": 1.2,
+            "dur": 2.5,
+            "type": "circle",
+            "rect": [
+              0.5,
+              0.35,
+              0.16,
+              0.3
+            ],
+            "text": "代码画的"
+          }
+        ]
+      }
+    },
+    {
+      "id": "s2",
+      "scene": "stat_cards",
+      "transition": "cut",
+      "lines": [
+        {
+          "text": "八千九百行代码，零张外部图片。",
+          "dur": 4
+        }
+      ],
+      "params": {
+        "title": "它是怎么做出来的",
+        "items": [
+          {
+            "value": 8914,
+            "unit": "行",
+            "label": "代码"
+          },
+          {
+            "value": 0,
+            "unit": "张",
+            "label": "外部图片"
+          },
+          {
+            "value": 807,
+            "unit": "KB",
+            "label": "整个游戏"
+          }
+        ]
+      }
+    },
+    {
+      "id": "s3",
+      "scene": "milestone_timeline",
+      "transition": "cut",
+      "lines": [
+        {
+          "text": "两天，五个里程碑。",
+          "dur": 4
+        }
+      ],
+      "params": {
+        "title": "两天，五个里程碑",
+        "items": [
+          {
+            "date": "10-11",
+            "title": "手感原型"
+          },
+          {
+            "date": "10-11",
+            "title": "建筑语汇"
+          },
+          {
+            "date": "10-11",
+            "title": "活起来"
+          },
+          {
+            "date": "10-12",
+            "title": "传播"
+          }
+        ]
+      }
+    },
+    {
+      "id": "s4",
+      "scene": "doc_quote",
+      "lines": [
+        {
+          "text": "给 AI 的指令。",
+          "dur": 4
+        }
+      ],
+      "params": {
+        "style": "prompt",
+        "label": "给 AI 的一句话",
+        "text": "做一个**赛博修仙**的御剑射击游戏，最后斩落一条**机甲巨龙**。",
+        "source": "提示词",
+        "cps": 18,
+        "at": 0.3
+      }
+    }
+  ]
+}

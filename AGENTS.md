@@ -13,3 +13,4 @@
 9. 用户可能在工作台（`node bin/mjv.mjs studio`）里选了风格、换了场景、写了修改意见、传了素材。开工前先用 MCP `mjv_notes` 读意见，处理完标成已完成。见 `SKILL.md` 第 16 节。
 10. 加了新场景或新风格包后跑 `node bin/mjv.mjs previews`，更新工作台的样张和预览。
 11. 写美术方案、新画面之前读 `docs/视觉手法.md`（MCP：`mjv_guide` 的 `doc: "visual"`）。美术方案要先在关键镜头上做出静帧给用户挑，不要只用文字描述，也不要替用户决定。防重复检查用 MCP `mjv_history`。
+12. 试玩解说（用户给无声录屏）：读 `prompts/game_commentary.md`（MCP：`mjv_guide` 的 `doc: "gameplay"`），用 `mjv_games` / `mjv_footage` / `mjv_cover`。见 `SKILL.md` 第 17 节。

@@ -440,3 +440,23 @@ project.json 的 `theme`（风格包会写好一份，可以改）。场景里 `
 
 开工前先 `mjv_notes`；交付前再看一遍有没有没处理的意见。
 新增或修改了场景、风格包之后，运行 `node bin/mjv.mjs previews`，工作台里的样张和预览小片才会更新。
+
+---
+
+## 17. 试玩解说（录屏 + 配音）
+
+用户只给**无声录屏**、可能不给稿子，你做成一期"AI 做的游戏"试玩解说。**完整流程和写法见 `prompts/game_commentary.md`**（MCP：`mjv_guide` 的 `doc: "gameplay"`）。
+
+```bash
+node bin/mjv.mjs game add <游戏仓库>            # 登记游戏（一次）：大小、代码量、提交史、文档路径 → games/<slug>.json
+node bin/mjv.mjs new projects/<名字> --template=gameplay
+node bin/mjv.mjs footage projects/<名字> <录屏>   # 导入：精确取帧的代理 + 高光分析 + 带时间和 10% 网格的拼图 → footage/
+node bin/mjv.mjs prep projects/<名字>             # 配音 + 时间轴
+node bin/mjv.mjs cover projects/<名字> --video=<录屏名> --t=12 --title="第一行|第二行" --sub="副标题"
+```
+MCP：`mjv_games`、`mjv_footage`（拼图直接作为图片返回）、`mjv_cover`、`mjv_new_project`（`template: "gameplay"`, `game`）。
+
+- 录屏在 project.json 的 `videos` 里（`mjv footage` 自动登记）。场景里用 `ctx.useVideo(名字, (u) => 录屏秒数)` 拿到 `<video>`，引擎每帧先把它精确跳到对应时刻再画，所以渲染结果是确定的。
+- 新场景：`footage_play`（录屏片段：fit / fill / card 版式、推拉、慢放、定格、标注）、`stat_cards`（数据卡）、`milestone_timeline`（开发时间线）、`doc_quote`（提示词 / 文档摘录）。都是竖屏、颜色跟随主题。
+- 配音模式下底部字幕在 y≈1450，画面关键内容放在 y 120–1420。
+- 解说里的数字只能来自 `games/<slug>.json` 和游戏仓库的文档。

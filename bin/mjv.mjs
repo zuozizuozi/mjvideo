@@ -1,11 +1,14 @@
 #!/usr/bin/env node
 // mjv —— 麻酱视频引擎命令行入口（零 npm 依赖：Node 24 + Chrome + FFmpeg + Python）
 //
-//   node bin/mjv.mjs new <项目目录> [--vibe] [--style=名]  新建项目（--vibe 无口播横屏；--style 套用风格包）
+//   node bin/mjv.mjs new <项目目录> [--vibe] [--style=名] [--template=gameplay]  新建项目（--vibe 无口播横屏；--style 套风格包；--template=gameplay 试玩解说）
 //   node bin/mjv.mjs styles                         列出风格包
 //   node bin/mjv.mjs previews [--force]             生成风格包样张和场景预览小片（工作台用）
 //   node bin/mjv.mjs studio                         打开工作台（浏览器）
 //   node bin/mjv.mjs ref <项目> <图或视频…>          分析参考素材 → 项目 refs/（拼图、色板、节奏）
+//   node bin/mjv.mjs footage <项目> <录屏> [--key=名]  导入录屏：精确取帧的代理 + 高光分析 + 带网格的拼图
+//   node bin/mjv.mjs game add <游戏仓库> | game list   登记游戏（试玩解说用的事实：大小、代码量、提交史、文档）
+//   node bin/mjv.mjs cover <项目> --video= --t= --title="…|…" [--sub=]  封面 3:4 + 9:16
 //   node bin/mjv.mjs scenes [项目目录]              列出场景库（含项目自带场景）及其参数
 //   node bin/mjv.mjs tts <项目> [镜头id...]         合成配音（有缓存）
 //   node bin/mjv.mjs timeline <项目>                生成时间轴
@@ -92,6 +95,7 @@ canvas { display: block; }
 <canvas id="c" width="${cfg.format.width}" height="${cfg.format.height}"></canvas>
 <img id="avatar" src="${avatar && fs.existsSync(avatar) ? fileUrl(avatar) : ""}" style="display:none">
 ${Object.entries(cfg.images || {}).map(([k, p]) => { const f = path.resolve(pdir, p); if (!fs.existsSync(f)) console.error(`⚠ 图片「${k}」不存在：${f}`); return `<img class="mjimg" data-key="${k}" src="${fileUrl(f)}" style="display:none">`; }).join("\n")}
+${Object.entries(cfg.videos || {}).map(([k, p]) => { const f = path.resolve(pdir, p); if (!fs.existsSync(f)) console.error(`⚠ 视频「${k}」不存在：${f}`); return `<video class="mjvid" data-key="${k}" src="${fileUrl(f)}" muted preload="metadata" style="display:none"></video>`; }).join("\n")}
 <script>window.PROJECT = ${JSON.stringify(PROJECT)};</script>
 ${(cfg.vendorScripts || []).map((v) => `<script src="${fileUrl(path.resolve(pdir, v))}"></script>`).join("\n")}
 <script src="${fileUrl(path.join(ENGINE, "lib.js"))}"></script>
@@ -158,6 +162,7 @@ function segmentPlan(P, tl, files, bounds) {
   const anyThumbs = (i) => { const m = sceneMeta(files[shots[i].scene])[0]; return m && m.needsThumbs; };
   const avatarP = cfg.overlay.avatar ? path.join(pdir, cfg.overlay.avatar) : "";
   const avatarSig = avatarP && fs.existsSync(avatarP) ? fs.statSync(avatarP).size : 0;
+  const vidSig = Object.entries(cfg.videos || {}).map(([k, p]) => { const f = path.resolve(pdir, p); return [k, fs.existsSync(f) ? fs.statSync(f).size + ":" + fs.statSync(f).mtimeMs : 0]; });
   const imgSig = Object.entries(cfg.images || {}).map(([k, p]) => { const f = path.resolve(pdir, p); return [k, fs.existsSync(f) ? fs.statSync(f).size + ":" + fs.statSync(f).mtimeMs : 0]; });
   return shots.map((s, i) => {
     const f0 = i === 0 ? 0 : Math.round(bounds[i - 1] * fps), f1 = i === n - 1 ? totalFrames : Math.round(bounds[i] * fps);
@@ -165,7 +170,7 @@ function segmentPlan(P, tl, files, bounds) {
     const deps = anyThumbs(i) ? shots.map((x) => x.scene) : near.map((k) => shots[k].scene);
     const subs = tl.subs.filter((x) => x.t1 >= f0 / fps - 0.2 && x.t0 <= f1 / fps + 0.2);
     const hash = sha(engineSrc, [...new Set(deps)].map(sceneSrc), near.map((k) => shots[k]), near.map((k) => tl.paras[k]), subs,
-      cfg.format, cfg.overlay, cfg.fonts || null, cfg.vendorScripts || null, cfg.transitionSfx ?? null, cfg.theme || null, imgSig, tl.total, avatarSig, cfg.transitionHalf || 0.32, f0, f1);
+      cfg.format, cfg.overlay, cfg.fonts || null, cfg.vendorScripts || null, cfg.transitionSfx ?? null, cfg.theme || null, imgSig, vidSig, tl.total, avatarSig, cfg.transitionHalf || 0.32, f0, f1);
     return { id: s.id, f0, f1, hash, file: path.join(pdir, "build", "segments", s.id + ".mp4") };
   });
 }
@@ -262,9 +267,11 @@ function newProject(dir) {
   if (fs.existsSync(path.join(pdir, "project.json"))) die("已存在 project.json：" + pdir);
   for (const d of ["scenes", "assets", "build", "output"]) fs.mkdirSync(path.join(pdir, d), { recursive: true });
   // --vibe：无口播模板（横屏、字幕 + 配乐，见 SKILL.md 第 11 节）；--style=名字：套用 styles/ 里的风格包（主题、字体）
-  const vibe = flags.vibe || flags.style;
-  fs.copyFileSync(path.join(ROOT, "templates", vibe ? "project.vibe.example.json" : "project.example.json"), path.join(pdir, "project.json"));
-  if (!vibe) fs.copyFileSync(path.join(ROOT, "assets", "avatar.png"), path.join(pdir, "assets", "avatar.png"));
+  // --template=gameplay：试玩解说模板（竖屏、配音、录屏片段，见 SKILL.md 第 17 节）
+  const vibe = flags.vibe || (flags.style && !flags.template), tpl = flags.template ? `project.${flags.template}.example.json` : vibe ? "project.vibe.example.json" : "project.example.json";
+  if (!fs.existsSync(path.join(ROOT, "templates", tpl))) die(`没有模板 ${tpl}`);
+  fs.copyFileSync(path.join(ROOT, "templates", tpl), path.join(pdir, "project.json"));
+  if (!vibe && !flags.template) fs.copyFileSync(path.join(ROOT, "assets", "avatar.png"), path.join(pdir, "assets", "avatar.png"));
   if (flags.style) {
     const sp = path.join(ROOT, "styles", String(flags.style), "style.json");
     if (!fs.existsSync(sp)) die(`没有风格包「${flags.style}」，用 node bin/mjv.mjs styles 查看`);
@@ -306,11 +313,21 @@ switch (cmd) {
   case "new": newProject(pos[0]); break;
   case "scenes": listScenes(pos[0]); break;
   case "styles": listStyles(); break;
+  case "footage": { const P = project(pos[0]); if (!pos[1]) die("用法：mjv footage <项目> <录屏文件> [--key=名字]"); const { footage } = await import(pathToFileURL(path.join(TOOLS, "footage.mjs")).href); await footage(P.pdir, path.resolve(pos[1]), flags); break; }
+  case "game": {
+    const G = await import(pathToFileURL(path.join(TOOLS, "game.mjs")).href);
+    if (pos[0] === "add") { if (!pos[1]) die("用法：mjv game add <游戏仓库目录> [--slug=名字]"); G.gameAdd(ROOT, pos[1], flags); }
+    else for (const g of G.gameList(ROOT)) console.log(`${g.slug.padEnd(16)} ${g.name}  ${g.facts.sizeKB ?? "?"} KB · ${g.facts.srcLines} 行 · ${g.facts.commits} 次提交
+                 ${g.intro.slice(0, 80)}`);
+    break;
+  }
+  case "cover": { const P = project(pos[0]); const { cover } = await import(pathToFileURL(path.join(TOOLS, "cover.mjs")).href); cover(ROOT, P.pdir, flags); break; }
   case "studio": { const { studio } = await import(pathToFileURL(path.join(TOOLS, "studio.mjs")).href); await studio(ROOT, flags); break; }
   case "previews": { const { previews } = await import(pathToFileURL(path.join(TOOLS, "previews.mjs")).href); await previews(ROOT, flags); break; }
   case "ref": { const P = project(pos[0]); if (!pos[1]) die("用法：mjv ref <项目> <参考图或视频…>"); py("ref.py", P.pdir, ...pos.slice(1).map((f) => path.resolve(f))); break; }
   case "tts": { const P = project(pos[0]); py("tts.py", P.pdir, ...pos.slice(1)); break; }
   case "timeline": { const P = project(pos[0]); py("timeline.py", P.pdir); break; }
+  case "prep": { const P = project(pos[0]); py("tts.py", P.pdir); py("timeline.py", P.pdir); break; }   // 配音（无口播时自动跳过）+ 时间轴
   case "check": await check(project(pos[0])); break;
   case "stills": await stills(project(pos[0]), pos.slice(1)); break;
   case "clip": await clip(project(pos[0]), pos[1], +pos[2], path.resolve(pos[3]), +(flags.w || 480), +(flags.fps || 15)); break;

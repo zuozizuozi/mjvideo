@@ -1,0 +1,31 @@
+{
+  "slug": "glowdive",
+  "name": "萤渊 Glowdive",
+  "intro": "竖屏、单指操作的 2.5D 深海弹珠肉鸽。顶部的灯笼射出宝石弹珠，弹珠穿过珊瑚、电水母、爆裂泡一路连锁弹跳；每一发结束时，攒下的光能化作光潮，轰向从深渊里不断涌上来的怪物。时间不会停：灯笼充好能就能再发，怪物各有各的游法。每层结束三选一，闯 10 层打 Boss「渊心之主」，死了重开。",
+  "repo": "F:/qks-glowdive",
+  "docs": [
+    "F:/qks-glowdive/README.md",
+    "F:/qks-glowdive/DESIGN.md",
+    "F:/qks-glowdive/PROGRESS.md",
+    "F:/qks-glowdive/docs"
+  ],
+  "facts": {
+    "singleFile": "萤渊.html",
+    "sizeKB": 1092,
+    "srcFiles": 18,
+    "srcLines": 4347,
+    "commits": 3,
+    "firstCommit": "2026-10-13",
+    "lastCommit": "2026-10-13",
+    "zeroExternalArt": null
+  },
+  "recentCommits": [
+    "2026-10-13 v0.2.1: align card icons, explain Light Tide, local full-version unlock (file:// + settings toggle)",
+    "2026-10-13 v0.2: real-time enemies + 2.5D bioluminescent deep-sea visuals",
+    "2026-10-13 萤渊 Glowdive v0.1: first complete playable build"
+  ],
+  "filming": "",
+  "notes": "",
+  "tags": [],
+  "updated": "2026-10-14"
+}
