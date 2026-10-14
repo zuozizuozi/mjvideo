@@ -42,9 +42,12 @@ node bin/mjv.mjs build projects/my_topic
 node bin/mjv.mjs promote projects/my_topic <场景名>   # 好场景收进场景库
 ```
 
+**工作台**（看风格和场景、选风格、换场景、写意见、传素材）：双击 `打开工作台.bat`，或 `node bin/mjv.mjs studio`，浏览器打开 http://127.0.0.1:5178 。
+
 无口播横屏（字幕 + 配乐）：
 ```bash
-node bin/mjv.mjs styles                                   # 风格包：dark-gold / paper / neon / swiss
+node bin/mjv.mjs styles                                   # 12 套风格包
+node bin/mjv.mjs previews                                 # 生成风格样张和场景预览（加了新场景 / 风格后跑）
 node bin/mjv.mjs new projects/my_topic --style=paper      # 用风格包起步（主题写进 project.json，可以随便改）
 node bin/mjv.mjs ref projects/my_topic 参考视频.mp4 参考图.jpg   # 分析参考素材 → refs/（拼图、色板、节奏）
 ```
@@ -72,6 +75,7 @@ mjvideo/
 ├─ templates/               project.example.json、project.vibe.example.json、scene.template.js
 ├─ prompts/                 director.md（编导）、art_director.md（美术方案）、scene_author.md（场景作者）
 ├─ mcp/server.mjs           MCP 服务（docs/MCP接入.md）
+├─ studio/                  工作台前端（ui/）和风格样张项目（showcase/）
 ├─ docs/复盘.md
 ├─ assets/avatar.png        默认头像
 ├─ projects/

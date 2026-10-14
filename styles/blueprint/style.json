@@ -1,0 +1,60 @@
+{
+  "name": "blueprint",
+  "title": "工程蓝图",
+  "desc": "深蓝图纸 + 白色细网格、等宽字体、黄色铅笔批注。像工程师的设计图。适合讲原理、结构、架构、算法步骤。",
+  "theme": {
+    "name": "blueprint",
+    "mode": "dark",
+    "texture": "grid",
+    "bg": {
+      "center": "#163f6e",
+      "edge": "#07203d"
+    },
+    "dust": {
+      "color": "#cfe6ff",
+      "count": 30
+    },
+    "glowScale": 0.5,
+    "fonts": {
+      "title": "Consolas, \"Microsoft YaHei\", monospace",
+      "body": "Consolas, \"Microsoft YaHei\", monospace",
+      "titleWeight": "700",
+      "bodyWeight": "700"
+    },
+    "text": "#e8f3ff",
+    "dim": "#b7d3f0",
+    "muted": "#7fa3c8",
+    "accent": "#ffd166",
+    "cold": "#7fd1ff",
+    "highlight": "#ffffff",
+    "warn": "#ffd166",
+    "glow": "#9fd3ff",
+    "shine": "#ffffff",
+    "halo": "#cfe6ff",
+    "coldDot": "#7fd1ff",
+    "coldLine": "#5d86b3",
+    "bar": "#3e6a99",
+    "panel": "#0a2748",
+    "card": "#0f3157",
+    "panelSolid": "#0a2748",
+    "terrainLow": "#1d5a92",
+    "terrainHigh": "#07203d"
+  },
+  "fonts": [
+    {
+      "family": "SongB",
+      "src": "assets/fonts/NotoSerifSC-Bold.otf"
+    },
+    {
+      "family": "SongH",
+      "src": "assets/fonts/NotoSerifSC-Black.otf"
+    }
+  ],
+  "fontsToLoad": [
+    "40px SongB",
+    "40px SongH"
+  ],
+  "music": {
+    "bpm": 80
+  }
+}

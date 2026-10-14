@@ -1,0 +1,56 @@
+{
+  "name": "kraft",
+  "title": "牛皮纸手作",
+  "desc": "牛皮纸底 + 纸纹、深棕墨字、橙色贴纸感强调。像手工笔记和剪贴本。适合 DIY、产品拆解、经验分享、清单类内容。",
+  "theme": {
+    "name": "kraft",
+    "mode": "light",
+    "texture": "paper",
+    "bg": {
+      "center": "#cfae80",
+      "edge": "#b08657"
+    },
+    "dust": {
+      "color": "#3b2a18",
+      "count": 30
+    },
+    "glowScale": 0.15,
+    "textGlow": 0,
+    "hiGlow": 0,
+    "text": "#2a1d10",
+    "dim": "#3e2c19",
+    "muted": "#5e4529",
+    "accent": "#d9480f",
+    "cold": "#1d4e6b",
+    "highlight": "#fff8ec",
+    "warn": "#d9480f",
+    "glow": "#d9480f",
+    "shine": "#2a1d10",
+    "halo": "#fff1d6",
+    "coldDot": "#1d4e6b",
+    "coldLine": "#7a6040",
+    "bar": "#a8865a",
+    "panel": "#d9bc92",
+    "card": "#efe0c4",
+    "panelSolid": "#c9a77a",
+    "terrainLow": "#a37a48",
+    "terrainHigh": "#c9a77a"
+  },
+  "fonts": [
+    {
+      "family": "SongB",
+      "src": "assets/fonts/NotoSerifSC-Bold.otf"
+    },
+    {
+      "family": "SongH",
+      "src": "assets/fonts/NotoSerifSC-Black.otf"
+    }
+  ],
+  "fontsToLoad": [
+    "40px SongB",
+    "40px SongH"
+  ],
+  "music": {
+    "bpm": 88
+  }
+}

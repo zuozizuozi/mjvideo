@@ -10,3 +10,8 @@ psnr*.log
 node_modules/
 __pycache__/
 .DS_Store
+
+# 工作台预览的中间产物
+styles/*/_build/
+studio/showcase/build/
+studio/showcase/output/

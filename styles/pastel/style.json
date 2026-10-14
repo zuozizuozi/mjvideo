@@ -1,0 +1,61 @@
+{
+  "name": "pastel",
+  "title": "马卡龙",
+  "desc": "粉 → 薄荷的柔和渐变、圆润无衬线、低对比。温柔、治愈、不压迫。适合生活方式、心理、情感、给新手的入门。",
+  "theme": {
+    "name": "pastel",
+    "mode": "light",
+    "texture": "none",
+    "bg": {
+      "type": "linear",
+      "center": "#ffd6e7",
+      "edge": "#c6f1ea"
+    },
+    "dust": {
+      "color": "#c9a7d8",
+      "count": 40
+    },
+    "glowScale": 0.4,
+    "fonts": {
+      "title": "\"Microsoft YaHei\", \"PingFang SC\", \"Noto Sans CJK SC\", sans-serif",
+      "body": "\"Microsoft YaHei\", \"PingFang SC\", \"Noto Sans CJK SC\", sans-serif",
+      "titleWeight": "700",
+      "bodyWeight": "700"
+    },
+    "text": "#3d3550",
+    "dim": "#5a5170",
+    "muted": "#9a90b0",
+    "accent": "#ff6f9f",
+    "cold": "#3fb8b0",
+    "highlight": "#3d3550",
+    "warn": "#ff6f9f",
+    "glow": "#ff9fc0",
+    "shine": "#ffffff",
+    "halo": "#ffd1e1",
+    "coldDot": "#5fc7c0",
+    "coldLine": "#b9d9e6",
+    "bar": "#e3d9ef",
+    "panel": "#ffffff",
+    "card": "#ffffff",
+    "panelSolid": "#fdf2f5",
+    "terrainLow": "#ffd1e1",
+    "terrainHigh": "#e6f4f2"
+  },
+  "fonts": [
+    {
+      "family": "SongB",
+      "src": "assets/fonts/NotoSerifSC-Bold.otf"
+    },
+    {
+      "family": "SongH",
+      "src": "assets/fonts/NotoSerifSC-Black.otf"
+    }
+  ],
+  "fontsToLoad": [
+    "40px SongB",
+    "40px SongH"
+  ],
+  "music": {
+    "bpm": 92
+  }
+}

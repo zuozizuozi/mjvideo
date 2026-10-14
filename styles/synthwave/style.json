@@ -1,0 +1,61 @@
+{
+  "name": "synthwave",
+  "title": "合成波",
+  "desc": "紫 → 黑的夜空渐变 + 网格、霓虹粉和青色、强发光。80 年代复古未来。适合未来科技、游戏、互联网文化、怀旧。",
+  "theme": {
+    "name": "synthwave",
+    "mode": "dark",
+    "texture": "grid",
+    "bg": {
+      "type": "linear",
+      "center": "#2e0b52",
+      "edge": "#08030f"
+    },
+    "dust": {
+      "color": "#ff6ad5",
+      "count": 60
+    },
+    "glowScale": 1.4,
+    "fonts": {
+      "title": "\"Microsoft YaHei\", \"PingFang SC\", \"Noto Sans CJK SC\", sans-serif",
+      "body": "\"Microsoft YaHei\", \"PingFang SC\", \"Noto Sans CJK SC\", sans-serif",
+      "titleWeight": "700",
+      "bodyWeight": "700"
+    },
+    "text": "#f6e9ff",
+    "dim": "#d8c2f0",
+    "muted": "#9a7fbf",
+    "accent": "#ff6ad5",
+    "cold": "#2de2e6",
+    "highlight": "#ffffff",
+    "warn": "#ff6ad5",
+    "glow": "#ff6ad5",
+    "shine": "#f6e9ff",
+    "halo": "#ffb3ec",
+    "coldDot": "#2de2e6",
+    "coldLine": "#6a4c9c",
+    "bar": "#4a2a7a",
+    "panel": "#12062a",
+    "card": "#1c0b3a",
+    "panelSolid": "#12062a",
+    "terrainLow": "#5a1a6a",
+    "terrainHigh": "#08030f"
+  },
+  "fonts": [
+    {
+      "family": "SongB",
+      "src": "assets/fonts/NotoSerifSC-Bold.otf"
+    },
+    {
+      "family": "SongH",
+      "src": "assets/fonts/NotoSerifSC-Black.otf"
+    }
+  ],
+  "fontsToLoad": [
+    "40px SongB",
+    "40px SongH"
+  ],
+  "music": {
+    "bpm": 100
+  }
+}

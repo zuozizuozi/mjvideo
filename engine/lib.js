@@ -114,8 +114,10 @@ function bgVibe(c, u, o = {}) {
   let b = _vc[key];
   if (!b) {
     b = _vc[key] = canvas(W, H); const x = b.getContext("2d");
-    const gr = x.createRadialGradient(W / 2, H * 0.45, 0, W / 2, H * 0.45, Math.hypot(W, H) * 0.62);
-    gr.addColorStop(0, o.center || THEME.bg.center); gr.addColorStop(1, o.edge || THEME.bg.edge); x.fillStyle = gr; x.fillRect(0, 0, W, H);
+    // bg.type：radial（默认，中心 → 四周）/ linear（上 → 下，center 是上方颜色，edge 是下方颜色）/ flat（纯色 center）
+    const bt = THEME.bg.type || "radial";
+    const gr = bt === "linear" ? x.createLinearGradient(0, 0, 0, H) : x.createRadialGradient(W / 2, H * 0.45, 0, W / 2, H * 0.45, Math.hypot(W, H) * 0.62);
+    gr.addColorStop(0, o.center || THEME.bg.center); gr.addColorStop(1, bt === "flat" ? (o.center || THEME.bg.center) : (o.edge || THEME.bg.edge)); x.fillStyle = gr; x.fillRect(0, 0, W, H);
     const R = rng(91), ink = THEME.rgb.text.join(",");
     if (tex === "paper") {
       for (let i = 0; i < W * H / 90; i++) { x.fillStyle = `rgba(${ink},${0.02 + R() * 0.05})`; x.fillRect(R() * W, R() * H, 1 + R() * 1.5, 1 + R() * 1.5); }
@@ -130,10 +132,23 @@ function bgVibe(c, u, o = {}) {
     } else if (tex === "halftone") {
       x.fillStyle = `rgba(${ink},0.07)`;
       for (let gy = 0; gy < H; gy += 14) for (let gx = (gy / 14) % 2 ? 7 : 0; gx < W; gx += 14) { const r = 1.6 * (gy / H); x.beginPath(); x.arc(gx, gy, r, 0, 7); x.fill(); }
+    } else if (tex === "chalk") {          // 黑板：大片擦痕 + 细粉尘
+      for (let i = 0; i < 40; i++) { const cx = R() * W, cy = R() * H, rr2 = 120 + R() * 320, g2 = x.createRadialGradient(cx, cy, 0, cx, cy, rr2); g2.addColorStop(0, `rgba(${ink},${0.03 + R() * 0.04})`); g2.addColorStop(1, `rgba(${ink},0)`); x.fillStyle = g2; x.fillRect(cx - rr2, cy - rr2, rr2 * 2, rr2 * 2); }
+      for (let i = 0; i < W * H / 160; i++) { x.fillStyle = `rgba(${ink},${0.03 + R() * 0.07})`; x.fillRect(R() * W, R() * H, 1, 1); }
     }
+    // grain（胶片颗粒）在下面每帧叠加，这里不预画
     if (THEME.vignette) { const v = x.createRadialGradient(W / 2, H / 2, H * 0.35, W / 2, H / 2, Math.hypot(W, H) * 0.6); v.addColorStop(0, "rgba(0,0,0,0)"); v.addColorStop(1, `rgba(0,0,0,${THEME.vignette})`); x.fillStyle = v; x.fillRect(0, 0, W, H); }
   }
   c.drawImage(b, 0, 0);
+  if (tex === "grain") {                     // 胶片颗粒：预画一块噪点，每帧按时间换位置（确定性）
+    const nk = "grain";
+    const tile = _vc[nk] || (_vc[nk] = (() => { const t = canvas(256, 256), tx = t.getContext("2d"), R = rng(5), im = tx.createImageData(256, 256);
+      for (let i = 0; i < im.data.length; i += 4) { const v = R() * 255; im.data[i] = im.data[i + 1] = im.data[i + 2] = v; im.data[i + 3] = 26; } tx.putImageData(im, 0, 0); return t; })());
+    const f = Math.floor(u * 24), ox = (f * 97) % 256, oy = (f * 61) % 256;
+    c.save(); c.globalCompositeOperation = THEME.mode === "light" ? "multiply" : "screen";
+    for (let gy = -oy; gy < H; gy += 256) for (let gx = -ox; gx < W; gx += 256) c.drawImage(tile, gx, gy);
+    c.restore();
+  }
   const n = o.dust ?? THEME.dust.count; if (!n) return;
   const dk = `dust${n}x${W}x${o.seed || 7}`;
   const d = _vc[dk] || (_vc[dk] = (() => { const R = rng(o.seed || 7); return Array.from({ length: n }, () => ({ x: R() * W, y: R() * H, r: 0.8 + R() * 1.8, s: 4 + R() * 14, p: R() * 6.28, a: 0.12 + R() * 0.35 })); })());

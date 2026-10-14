@@ -1,0 +1,55 @@
+{
+  "name": "noir",
+  "title": "黑白电影",
+  "desc": "纯黑白 + 胶片颗粒和重暗角、衬线粗体，强调只用纯白。冷峻、悬疑、有戏剧感。适合真相揭秘、反转、案件式叙事。",
+  "theme": {
+    "name": "noir",
+    "mode": "dark",
+    "texture": "grain",
+    "vignette": 0.55,
+    "bg": {
+      "center": "#2c2c2c",
+      "edge": "#050505"
+    },
+    "dust": {
+      "color": "#ffffff",
+      "count": 50
+    },
+    "glowScale": 0.6,
+    "text": "#bdbdbd",
+    "dim": "#a0a0a0",
+    "muted": "#7a7a7a",
+    "accent": "#ffffff",
+    "cold": "#8a8a8a",
+    "highlight": "#ffffff",
+    "warn": "#ffffff",
+    "glow": "#ffffff",
+    "shine": "#ffffff",
+    "halo": "#dddddd",
+    "coldDot": "#9a9a9a",
+    "coldLine": "#555555",
+    "bar": "#444444",
+    "panel": "#0d0d0d",
+    "card": "#1a1a1a",
+    "panelSolid": "#0d0d0d",
+    "terrainLow": "#4a4a4a",
+    "terrainHigh": "#050505"
+  },
+  "fonts": [
+    {
+      "family": "SongB",
+      "src": "assets/fonts/NotoSerifSC-Bold.otf"
+    },
+    {
+      "family": "SongH",
+      "src": "assets/fonts/NotoSerifSC-Black.otf"
+    }
+  ],
+  "fontsToLoad": [
+    "40px SongB",
+    "40px SongH"
+  ],
+  "music": {
+    "bpm": 70
+  }
+}

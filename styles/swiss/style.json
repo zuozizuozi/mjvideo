@@ -7,8 +7,9 @@
     "mode": "light",
     "texture": "grid",
     "bg": {
-      "center": "#f4f3ee",
-      "edge": "#e8e6df"
+      "center": "#ffffff",
+      "edge": "#ffffff",
+      "type": "flat"
     },
     "dust": {
       "count": 0
@@ -30,7 +31,7 @@
     "card": "#ffffff",
     "panelSolid": "#ffffff",
     "terrainLow": "#f4d4d1",
-    "terrainHigh": "#f4f3ee",
+    "terrainHigh": "#ffffff",
     "textGlow": 0,
     "hiGlow": 0,
     "fonts": {

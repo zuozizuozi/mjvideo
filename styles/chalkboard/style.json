@@ -1,0 +1,58 @@
+{
+  "name": "chalkboard",
+  "title": "黑板粉笔",
+  "desc": "墨绿黑板 + 粉笔擦痕、楷体粉笔字、黄色粉笔强调。像课堂板书。适合教学、公式推导、入门科普。",
+  "theme": {
+    "name": "chalkboard",
+    "mode": "dark",
+    "texture": "chalk",
+    "bg": {
+      "center": "#2a4d40",
+      "edge": "#142a22"
+    },
+    "dust": {
+      "color": "#f4f1e6",
+      "count": 50
+    },
+    "glowScale": 0.35,
+    "fonts": {
+      "title": "KaiTi, STKaiti, Kai, serif",
+      "body": "KaiTi, STKaiti, Kai, serif"
+    },
+    "text": "#f4f1e6",
+    "dim": "#d9d6c8",
+    "muted": "#a9b8ab",
+    "accent": "#ffe066",
+    "cold": "#8fd3ff",
+    "highlight": "#ffffff",
+    "warn": "#ffe066",
+    "glow": "#ffe066",
+    "shine": "#f4f1e6",
+    "halo": "#f4f1e6",
+    "coldDot": "#8fd3ff",
+    "coldLine": "#7fa594",
+    "bar": "#4f7466",
+    "panel": "#1b372d",
+    "card": "#21423a",
+    "panelSolid": "#1b372d",
+    "terrainLow": "#3e6b58",
+    "terrainHigh": "#142a22"
+  },
+  "fonts": [
+    {
+      "family": "SongB",
+      "src": "assets/fonts/NotoSerifSC-Bold.otf"
+    },
+    {
+      "family": "SongH",
+      "src": "assets/fonts/NotoSerifSC-Black.otf"
+    }
+  ],
+  "fontsToLoad": [
+    "40px SongB",
+    "40px SongH"
+  ],
+  "music": {
+    "bpm": 84
+  }
+}

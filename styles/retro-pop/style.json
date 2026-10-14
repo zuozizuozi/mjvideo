@@ -1,0 +1,62 @@
+{
+  "name": "retro-pop",
+  "title": "复古波普",
+  "desc": "奶油底 + 网点印刷、粗黑无衬线、正红 / 柠檬黄 / 钴蓝撞色。像 60 年代漫画和海报。适合轻松、反差、吐槽、冷知识。",
+  "theme": {
+    "name": "retro-pop",
+    "mode": "light",
+    "texture": "halftone",
+    "bg": {
+      "type": "flat",
+      "center": "#ffd23f",
+      "edge": "#ffd23f"
+    },
+    "dust": {
+      "count": 0
+    },
+    "glowScale": 0.2,
+    "textGlow": 0,
+    "hiGlow": 0,
+    "fonts": {
+      "title": "Impact, \"Microsoft YaHei\", sans-serif",
+      "body": "\"Microsoft YaHei\", \"PingFang SC\", \"Noto Sans CJK SC\", sans-serif",
+      "titleWeight": "700",
+      "bodyWeight": "700"
+    },
+    "text": "#1b1b1b",
+    "dim": "#333333",
+    "muted": "#6b6b6b",
+    "accent": "#e63946",
+    "cold": "#1d4ed8",
+    "highlight": "#1b1b1b",
+    "warn": "#e63946",
+    "glow": "#e63946",
+    "shine": "#1b1b1b",
+    "halo": "#ffffff",
+    "coldDot": "#1d4ed8",
+    "coldLine": "#7a8cff",
+    "bar": "#ffffff",
+    "panel": "#fff4c2",
+    "card": "#ffffff",
+    "panelSolid": "#ffd23f",
+    "terrainLow": "#ff8c42",
+    "terrainHigh": "#ffd23f"
+  },
+  "fonts": [
+    {
+      "family": "SongB",
+      "src": "assets/fonts/NotoSerifSC-Bold.otf"
+    },
+    {
+      "family": "SongH",
+      "src": "assets/fonts/NotoSerifSC-Black.otf"
+    }
+  ],
+  "fontsToLoad": [
+    "40px SongB",
+    "40px SongH"
+  ],
+  "music": {
+    "bpm": 110
+  }
+}

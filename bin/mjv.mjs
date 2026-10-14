@@ -3,6 +3,8 @@
 //
 //   node bin/mjv.mjs new <项目目录> [--vibe] [--style=名]  新建项目（--vibe 无口播横屏；--style 套用风格包）
 //   node bin/mjv.mjs styles                         列出风格包
+//   node bin/mjv.mjs previews [--force]             生成风格包样张和场景预览小片（工作台用）
+//   node bin/mjv.mjs studio                         打开工作台（浏览器）
 //   node bin/mjv.mjs ref <项目> <图或视频…>          分析参考素材 → 项目 refs/（拼图、色板、节奏）
 //   node bin/mjv.mjs scenes [项目目录]              列出场景库（含项目自带场景）及其参数
 //   node bin/mjv.mjs tts <项目> [镜头id...]         合成配音（有缓存）
@@ -206,6 +208,18 @@ async function stills(P, times) {
   } finally { await br.close(); }
 }
 
+// 小预览片段：从 t0 开始 dur 秒，缩到宽 w、帧率 fps，输出无声 mp4（给工作台和目录页用）
+async function clip(P, t0, dur, out, w = 480, fps = 15) {
+  const { br } = await loadSession(P);
+  try {
+    const ff = spawn("ffmpeg", ["-y", "-v", "error", "-f", "image2pipe", "-framerate", String(fps), "-c:v", "mjpeg", "-i", "-",
+      "-vf", `scale=${w}:-2`, "-c:v", "libx264", "-preset", "medium", "-crf", "26", "-pix_fmt", "yuv420p", "-movflags", "+faststart", out], { stdio: ["pipe", "inherit", "inherit"] });
+    for (let k = 0; k < Math.round(dur * fps); k++) { const buf = await br.shot(+t0 + k / fps); if (!ff.stdin.write(buf)) await new Promise((r) => ff.stdin.once("drain", r)); }
+    ff.stdin.end(); await new Promise((r) => ff.on("close", r));
+    console.log("✓ " + out);
+  } finally { await br.close(); }
+}
+
 async function check(P) {
   const { br, report } = await loadSession(P);
   await br.close();
@@ -291,11 +305,14 @@ switch (cmd) {
   case "new": newProject(pos[0]); break;
   case "scenes": listScenes(pos[0]); break;
   case "styles": listStyles(); break;
+  case "studio": { const { studio } = await import(pathToFileURL(path.join(TOOLS, "studio.mjs")).href); await studio(ROOT, flags); break; }
+  case "previews": { const { previews } = await import(pathToFileURL(path.join(TOOLS, "previews.mjs")).href); await previews(ROOT, flags); break; }
   case "ref": { const P = project(pos[0]); if (!pos[1]) die("用法：mjv ref <项目> <参考图或视频…>"); py("ref.py", P.pdir, ...pos.slice(1).map((f) => path.resolve(f))); break; }
   case "tts": { const P = project(pos[0]); py("tts.py", P.pdir, ...pos.slice(1)); break; }
   case "timeline": { const P = project(pos[0]); py("timeline.py", P.pdir); break; }
   case "check": await check(project(pos[0])); break;
   case "stills": await stills(project(pos[0]), pos.slice(1)); break;
+  case "clip": await clip(project(pos[0]), pos[1], +pos[2], path.resolve(pos[3]), +(flags.w || 480), +(flags.fps || 15)); break;
   case "render": await render(project(pos[0])); break;
   case "audio": { const P = project(pos[0]); py("audio.py", P.pdir); break; }
   case "mux": mux(project(pos[0])); break;

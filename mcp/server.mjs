@@ -19,7 +19,7 @@ import { fileURLToPath } from "node:url";
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const PROJECTS = path.resolve(process.env.MJV_PROJECTS || path.join(ROOT, "projects"));
 const DEFAULT_WAIT = Number(process.env.MJV_MCP_WAIT || 3.5);
-const VERSION = "0.2.0";
+const VERSION = "0.3.0";
 const log = (...a) => process.stderr.write("[mjvideo-mcp] " + a.join(" ") + "\n");   // stdout 只能写协议消息
 
 // ---------------- 工具定义 ----------------
@@ -41,6 +41,9 @@ const TOOLS = [
   { name: "mjv_ref",
     description: "分析参考图 / 参考视频（本机文件路径）：复制到项目 refs/，生成关键帧拼图（视频按时间取 24 帧）、主色和强调色色板、镜头切换节奏和运动量报告，并把拼图和色板作为图片返回。用来提炼风格写美术方案，不是照抄。录屏素材最好先裁掉手机界面。",
     inputSchema: { type: "object", properties: { project: projectProp, files: { type: "array", items: { type: "string" }, description: "参考素材的绝对路径（图片、视频或文件夹）" }, wait_seconds: waitProp }, required: ["project", "files"] } },
+  { name: "mjv_notes",
+    description: "读用户在工作台（mjv studio）里写的修改意见：每条有镜头号、类型（change 修改 / newscene 需要新画面）、内容、状态。处理完一条就用 done 把它标成已完成（可附一句 reply 说明怎么改的）。开工前和交付前都要看一遍。",
+    inputSchema: { type: "object", properties: { project: projectProp, done: { type: "array", items: { type: "string" }, description: "要标成已完成的意见 id" }, reply: { type: "string", description: "给这些意见的回复（可选）" }, all: { type: "boolean", description: "连已完成的也列出来" } }, required: ["project"] } },
   { name: "mjv_project_info",
     description: "查看项目状态：路径、镜头列表和时长（来自时间轴）、最近一次质检结果、成片路径。",
     inputSchema: { type: "object", properties: { project: projectProp }, required: ["project"] } },
@@ -164,6 +167,18 @@ const handlers = {
     };
     return waitJob(startJob(`ref ${path.basename(pdir)}`, ["ref", pdir, ...list], { after }), wait_seconds);
   },
+  async mjv_notes({ project, done, reply, all }) {
+    const pdir = resolveProject(project), p = path.join(pdir, "review.json");
+    const rv = fs.existsSync(p) ? JSON.parse(fs.readFileSync(p, "utf8")) : { notes: [] };
+    if (done && done.length) {
+      for (const n of rv.notes) if (done.includes(n.id)) { n.status = "done"; n.doneAt = new Date().toISOString(); if (reply) n.reply = reply; }
+      fs.writeFileSync(p, JSON.stringify(rv, null, 2));
+    }
+    const list = rv.notes.filter((n) => all || n.status !== "done");
+    if (!list.length) return { content: [text(done && done.length ? `✓ 已标记完成。没有未处理的意见了。` : "没有未处理的意见。")] };
+    return { content: [text((done && done.length ? `✓ 已标记 ${done.length} 条完成。\n` : "") + `${all ? "全部" : "未处理的"}意见（${list.length} 条）：\n` +
+      list.map((n) => `- [${n.id}] ${n.shot || "整体"} · ${n.kind === "newscene" ? "需要新画面" : "修改"}${n.status === "done" ? " · 已完成" : ""}：${n.text}${n.reply ? `（回复：${n.reply}）` : ""}`).join("\n"))] };
+  },
   async mjv_project_info({ project }) {
     const pdir = resolveProject(project), b = (...p) => path.join(pdir, "build", ...p);
     const cfg = JSON.parse(fs.readFileSync(path.join(pdir, "project.json"), "utf8"));
@@ -223,7 +238,7 @@ async function handle(msg) {
     const v = SUPPORTED.includes(params?.protocolVersion) ? params.protocolVersion : SUPPORTED[0];
     return reply(id, { protocolVersion: v, capabilities: { tools: { listChanged: false } },
       serverInfo: { name: "mjvideo", version: VERSION },
-      instructions: "mjvideo：用代码（Canvas + 无头 Chrome + FFmpeg）做讲解视频的引擎，不调用视频生成模型。第一次使用先调 mjv_guide 读手册。流程：mjv_new_project（可选 style）→ 有参考素材先 mjv_ref → 写美术方案 design.md、改 project.json 的 theme 和场景代码 → mjv_run timeline/check → mjv_stills 看画面并修改 → mjv_run render → audio → mux → validate。风格和画面自由发挥，场景库只是零件。长任务会返回 job_id，用 mjv_job 查。" });
+      instructions: "mjvideo：用代码（Canvas + 无头 Chrome + FFmpeg）做讲解视频的引擎，不调用视频生成模型。第一次使用先调 mjv_guide 读手册。流程：mjv_new_project（可选 style）→ 有参考素材先 mjv_ref → 用户可能在工作台（mjv studio）里选了风格、换了场景、写了意见，先 mjv_notes 读意见 → 写美术方案 design.md、改 project.json 的 theme 和场景代码 → mjv_run timeline/check → mjv_stills 看画面并修改 → mjv_run render → audio → mux → validate。风格和画面自由发挥，场景库只是零件。长任务会返回 job_id，用 mjv_job 查。" });
   }
   if (method === "ping") return reply(id, {});
   if (method === "tools/list") return reply(id, { tools: TOOLS });

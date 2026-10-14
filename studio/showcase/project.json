@@ -1,0 +1,23 @@
+{
+  "title": "风格样张",
+  "format": { "width": 1920, "height": 1080, "fps": 30 },
+  "voice": { "engine": "none" },
+  "timing": { "lead": 0.5, "gap": 0.4, "tail": 1.0, "pre": 0.6, "lineGap": 0.25, "cps": 7, "linePad": 0.65, "minLine": 1.5 },
+  "overlay": { "brand": null, "styleLabel": false, "subtitles": "scene", "avatar": null },
+  "fonts": [ { "family": "SongB", "src": "assets/fonts/NotoSerifSC-Bold.otf" }, { "family": "SongH", "src": "assets/fonts/NotoSerifSC-Black.otf" } ],
+  "fontsToLoad": ["40px SongB", "40px SongH"],
+  "theme": {},
+  "images": { "sample": "assets/sample.jpg" },
+  "shots": [
+    { "id": "s1", "scene": "vibe_particle_title", "transition": "cut", "lines": [ { "text": "同一套技术，换一种样子。", "dur": 3.4 } ],
+      "params": { "blocks": [ { "line": 0, "size": 110, "y": 480, "font": "H", "stay": true } ], "extras": [ { "text": "S T Y L E   S A M P L E", "y": 600, "size": 28, "after": 0, "delay": 1.4 } ] } },
+    { "id": "s2", "scene": "vibe_prob_bars", "transition": "cut",
+      "lines": [ { "text": "「今天的风格是」后面接什么？" }, { "text": "温暖 46%　冷静 30%　俏皮 14%" }, { "text": "挑一个，接上。", "hold": 1.2 }, { "text": "配色、字体、纹理，都跟着**主题**走。" } ],
+      "params": { "prompt": "今天的风格是", "rounds": [[["温暖", 46], ["冷静", 30], ["俏皮", 14]], [["、", 52], ["。", 31]]], "more": "安静而笃定。" } },
+    { "id": "s3", "scene": "vibe_neural_net", "transition": "cut",
+      "lines": [ { "text": "一个字进来，" }, { "text": "穿过一层又一层，" }, { "text": "每一层都**拧一下**，" }, { "text": "变成下一个字的**概率**。" } ] },
+    { "id": "s4", "scene": "image_reveal", "transition": "cut",
+      "lines": [ { "text": "图片也会跟着主题**调色**。", "hold": 1.0 } ],
+      "params": { "image": "sample", "layout": "card", "reveal": "fade", "tint": "duotone", "label": "示意图" } }
+  ]
+}

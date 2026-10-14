@@ -356,7 +356,7 @@ MJ.scene("piston", {
 ## 12. 风格与美术方案（每条视频都要做）
 
 ### 三种起点，任选
-1. **选一个风格包**：`node bin/mjv.mjs styles` 查看。`new --style=<名>` 会把风格包的主题写进 project.json，**之后随便改**。现有：`dark-gold` 暗金星尘、`paper` 纸本手绘、`neon` 霓虹终端、`swiss` 极简瑞士。
+1. **选一个风格包**：`node bin/mjv.mjs styles` 查看。`new --style=<名>` 会把风格包的主题写进 project.json，**之后随便改**。现有 12 套：`dark-gold` 暗金星尘、`paper` 纸本手绘、`neon` 霓虹终端、`swiss` 极简瑞士、`blueprint` 工程蓝图、`ink` 水墨宣纸、`chalkboard` 黑板粉笔、`retro-pop` 复古波普、`pastel` 马卡龙、`noir` 黑白电影、`synthwave` 合成波、`kraft` 牛皮纸手作。样张在 `styles/<名>/preview.jpg`，工作台里可以并排比较。
 2. **从参考素材提炼**：用户给了参考图 / 参考视频，先 `mjv ref`（第 13 节），看拼图和色板，提炼出这条视频自己的风格。
 3. **完全自由创作**：话题本身有强烈的视觉联想（比如讲"记忆"可以用胶片和褪色照片，讲"算力"可以用工厂和流水线），就自己定。
 
@@ -409,7 +409,7 @@ project.json 的 `theme`（风格包会写好一份，可以改）。场景里 `
 | 字段 | 用途 | 场景里怎么用 |
 |---|---|---|
 | `mode` | `dark` / `light` | `TH.blend`：发光叠加方式（浅底上自动改成普通叠加） |
-| `bg.center` `bg.edge` `texture` `vignette` `dust` | 背景渐变、纹理（none / paper / scanline / grid / halftone）、暗角、微尘 | `bgVibe(c, u)` 自动用 |
+| `bg.type` `bg.center` `bg.edge` `texture` `vignette` `dust` | 背景（radial 径向 / linear 上下 / flat 纯色）、纹理（none / paper / scanline / grid / halftone / chalk / grain）、暗角、微尘 | `bgVibe(c, u)` 自动用 |
 | `text` `dim` `muted` `highlight` | 正文、次要文字、标注、最亮的点缀 | `TH.text`，带透明度用 `` `rgba(${TH.rgb.text},0.5)` `` |
 | `accent` `glow` `halo` | 强调色（高亮词、主角）、发光色、柔光 | `TH.accent`、`TH.rgb.accent`（数组，给 glowDot） |
 | `cold` `coldDot` `coldLine` `warn` | 冷色（混乱、错误、对比）、警示色 | 同上 |
@@ -418,3 +418,22 @@ project.json 的 `theme`（风格包会写好一份，可以改）。场景里 `
 | `glowScale` `textGlow` `hiGlow` | 发光强度（浅色风格调小） | `glowText` / `caption` 自动用 |
 
 新场景如果需要额外的颜色，**加到主题里**（在 project.json 的 theme 写新字段，场景里 `TH.myColor || 默认值`），不要写死在代码里。新风格包放 `styles/<名>/style.json`（照现有的写），攒到十几二十个就够一个工作室用。
+
+---
+
+## 16. 工作台（mjv studio）
+
+用户那边的可视化界面：`node bin/mjv.mjs studio`（或双击仓库根目录的 `打开工作台.bat`），浏览器打开 `http://127.0.0.1:5178`，只在本机。
+
+用户在工作台里能做的事，**都会落在项目文件夹里**，你要读到并尊重：
+| 用户的操作 | 落在哪 | 你怎么读 |
+|---|---|---|
+| 给项目套用风格包 | project.json 的 `style`、`theme`、`fonts` | 直接读 project.json |
+| 给某个镜头换场景（下拉框） | `shots[].scene` | 同上；换了场景后参数可能对不上，要检查 `params` |
+| 写修改意见 / 标"需要新画面" | `review.json` | **MCP `mjv_notes`**；处理完用 `mjv_notes` 的 `done` 标成已完成，附一句 `reply` |
+| 拖入参考素材 | `refs/`（已自动分析，有 `ref_report.md`） | 读报告、看拼图 |
+| 拖入图片素材 | `assets/`，并自动登记进 `images`（名字 = 文件名） | `MJ.lib.image("名字")` |
+| 点"出静帧" | `build/stills/sheet_<镜头>.jpg` | — |
+
+开工前先 `mjv_notes`；交付前再看一遍有没有没处理的意见。
+新增或修改了场景、风格包之后，运行 `node bin/mjv.mjs previews`，工作台里的样张和预览小片才会更新。
