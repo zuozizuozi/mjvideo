@@ -1,0 +1,57 @@
+{
+  "name": "paper",
+  "title": "纸本手绘",
+  "desc": "米黄纸面 + 纸纹纤维、墨色正文、朱红强调、靛蓝冷色，没有发光。像笔记本或旧书页。适合人文、历史、日常生活类话题，亲切不炫技。",
+  "theme": {
+    "name": "paper",
+    "mode": "light",
+    "texture": "paper",
+    "vignette": 0.12,
+    "bg": {
+      "center": "#f7f0e1",
+      "edge": "#e2d4b8"
+    },
+    "dust": {
+      "color": "#5a4a35",
+      "count": 40
+    },
+    "text": "#2a241c",
+    "dim": "#4a4236",
+    "muted": "#7d7160",
+    "accent": "#c2412d",
+    "cold": "#2f5d8a",
+    "highlight": "#1f1a14",
+    "warn": "#c2412d",
+    "glow": "#c2412d",
+    "shine": "#2a241c",
+    "halo": "#c2412d",
+    "coldDot": "#2f5d8a",
+    "coldLine": "#7c8ba3",
+    "bar": "#a89a82",
+    "panel": "#efe5cf",
+    "card": "#fbf6ea",
+    "panelSolid": "#f7f0e1",
+    "terrainLow": "#e8d5ae",
+    "terrainHigh": "#f7f0e1",
+    "textGlow": 0,
+    "hiGlow": 0,
+    "glowScale": 0.2
+  },
+  "fonts": [
+    {
+      "family": "SongB",
+      "src": "assets/fonts/NotoSerifSC-Bold.otf"
+    },
+    {
+      "family": "SongH",
+      "src": "assets/fonts/NotoSerifSC-Black.otf"
+    }
+  ],
+  "fontsToLoad": [
+    "40px SongB",
+    "40px SongH"
+  ],
+  "music": {
+    "bpm": 72
+  }
+}

@@ -9,6 +9,7 @@ MJ.scene("vibe_outro_note", {
   design: [1920, 1080],
   params: {},
   create(ctx) {
+    const TH = MJ.theme;                                 // 颜色、字体、叠加方式都从主题取（见 engine/lib.js 的 THEME_DEFAULT）
     const { W, H, E, pr, captions, bgVibe, glowDot, dot, GOLD } = MJ.lib;
     const { sfx } = ctx, L = ctx.lines;
     const sp = glowDot(GOLD, 40);
@@ -19,15 +20,15 @@ MJ.scene("vibe_outro_note", {
       const a = pr(u, 0, 1.2);
       // 光点缓慢上下浮动，周围有细小火星往上飘（避免片尾画面静止）
       const y0 = 700 + Math.sin(u * 0.9) * 24;
-      c.save(); c.globalCompositeOperation = "lighter"; c.globalAlpha = a * (0.6 + 0.4 * Math.sin(u * 1.6)); dot(c, sp, W / 2, y0, 1.1 + 0.15 * Math.sin(u * 1.3));
+      c.save(); c.globalCompositeOperation = TH.blend; c.globalAlpha = a * (0.6 + 0.4 * Math.sin(u * 1.6)); dot(c, sp, W / 2, y0, 1.1 + 0.15 * Math.sin(u * 1.3));
       for (const s of sparks) {
         const k = ((u * s.v + s.p) % 1);
-        c.globalAlpha = a * Math.sin(k * Math.PI) * 0.8; c.fillStyle = "#f3c46b";
+        c.globalAlpha = a * Math.sin(k * Math.PI) * 0.8; c.fillStyle = TH.accent;
         c.fillRect(W / 2 + s.x + Math.sin(u * 2 + s.p * 9) * 14, y0 + 60 - k * 320, 3, 3);
       }
       c.restore();
       captions(c, L, u, { mode: "stack", lh: 110, y: L.length > 1 ? 470 : 540, dim: 0.75,
-        per: { 0: { size: 36, color: "rgba(242,239,230,0.8)", glow: 0 }, 1: { size: 64, font: MJ.lib.SONGH, color: "#f3c46b", glow: 26 } } });
+        per: { 0: { size: 36, color: `rgba(${TH.rgb.text},0.8)`, glow: 0 }, 1: { size: 64, font: MJ.lib.SONGH, color: TH.accent, glow: 26 } } });
     };
   },
 });

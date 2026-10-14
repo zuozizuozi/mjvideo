@@ -42,6 +42,14 @@ node bin/mjv.mjs build projects/my_topic
 node bin/mjv.mjs promote projects/my_topic <场景名>   # 好场景收进场景库
 ```
 
+无口播横屏（字幕 + 配乐）：
+```bash
+node bin/mjv.mjs styles                                   # 风格包：dark-gold / paper / neon / swiss
+node bin/mjv.mjs new projects/my_topic --style=paper      # 用风格包起步（主题写进 project.json，可以随便改）
+node bin/mjv.mjs ref projects/my_topic 参考视频.mp4 参考图.jpg   # 分析参考素材 → refs/（拼图、色板、节奏）
+```
+每条视频先做美术方案（`prompts/art_director.md`），场景颜色从主题取，图片在 project.json 的 `images` 登记。详见 SKILL.md 第 11–15 节。
+
 ## 目录
 
 ```
@@ -50,16 +58,20 @@ mjvideo/
 ├─ engine/
 │  ├─ lib.js                场景注册 + 绘图/缓动/随机数工具（MJ.lib）
 │  ├─ runtime.js            时间轴、转场、字幕、头像、seek(t)、质检数据
-│  └─ scenes/               场景库（11 个，来自成功成片）
+│  └─ scenes/               场景库（零件库）：竖屏 11 个 + 无口播 10 个 vibe_* + 通用图片场景 image_reveal
 ├─ tools/
 │  ├─ tts.py                配音（edge-tts / 自录音频），按文本缓存
 │  ├─ timeline.py           逐字时间、字幕、总时长
 │  ├─ audio.py              代码合成配乐 + 音效 + 混音
 │  ├─ validate.py           质检
+│  ├─ silent.py             无口播时间轴
+│  ├─ ref.py                参考素材分析
 │  ├─ common.py             公共函数、字幕切分
 │  └─ port_show.py          把原版 show.js 拆成场景库的迁移脚本（留档）
-├─ templates/               project.example.json、scene.template.js
-├─ prompts/                 director.md（编导）、scene_author.md（场景作者）
+├─ styles/                  风格包（每个一个 style.json：主题配色、字体、纹理）
+├─ templates/               project.example.json、project.vibe.example.json、scene.template.js
+├─ prompts/                 director.md（编导）、art_director.md（美术方案）、scene_author.md（场景作者）
+├─ mcp/server.mjs           MCP 服务（docs/MCP接入.md）
 ├─ docs/复盘.md
 ├─ assets/avatar.png        默认头像
 ├─ projects/

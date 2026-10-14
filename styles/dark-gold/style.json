@@ -1,0 +1,5 @@
+{ "name": "dark-gold", "title": "暗金星尘",
+  "desc": "深蓝黑底、暖金光点和发光、粗宋字幕。沉静、宏大、有宇宙感。EP09 用的就是它。适合哲思、宏大叙事、科学原理。",
+  "theme": { "name": "dark-gold", "mode": "dark", "texture": "none" },
+  "fonts": [ { "family": "SongB", "src": "assets/fonts/NotoSerifSC-Bold.otf" }, { "family": "SongH", "src": "assets/fonts/NotoSerifSC-Black.otf" } ], "fontsToLoad": ["40px SongB", "40px SongH"],
+  "music": { "bpm": 76 } }

@@ -140,6 +140,10 @@ window.ready = (async () => {
   for (const f of PROJ.fontsToLoad || []) { try { await document.fonts.load(f); } catch (e) {} }
   await document.fonts.ready;
   if (OV.avatar && !avatarImg.complete) await new Promise((r) => { avatarImg.onload = avatarImg.onerror = r; });
+  for (const im of document.querySelectorAll("img.mjimg")) {        // project.json 的 images：全部加载完再开始渲染
+    if (!im.complete) await new Promise((r) => { im.onload = im.onerror = r; });
+    if (!im.naturalWidth) REPORT.errors.push(`图片「${im.dataset.key}」加载失败：${im.src}`);
+  }
   // 胶片类场景要用的缩略图：其余镜头在 72% 处的真实画面
   if (SHOTS.some((s) => MJ.registry[s.scene] && MJ.registry[s.scene].needsThumbs)) {
     for (const shot of SHOTS) {

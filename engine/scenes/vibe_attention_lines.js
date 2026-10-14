@@ -16,6 +16,7 @@ MJ.scene("vibe_attention_lines", {
     captionY: 960,
   },
   create(ctx) {
+    const TH = MJ.theme;                                 // 颜色、字体、叠加方式都从主题取（见 engine/lib.js 的 THEME_DEFAULT）
     const { W, H, clamp, mix, E, pr, rng, text, SONG, captions, glowText, bgVibe, glowDot, dot, GOLD, PAPER } = MJ.lib;
     const { sfx } = ctx, P = ctx.params, L = ctx.lines;
     const T = (i) => (L[i] ? L[i].t0 : 0);
@@ -41,11 +42,11 @@ MJ.scene("vibe_attention_lines", {
       // 全句互连（下方的网）
       const allK = pr(u, tAll, 1.4);
       if (allK > 0) {
-        c.save(); c.globalCompositeOperation = "lighter";
+        c.save(); c.globalCompositeOperation = TH.blend;
         for (const p of pairs) {
           const k = clamp((u - tAll - p.dl) / 0.8); if (k <= 0) continue;
           const x0 = lay[p.i].cx, x1 = lay[p.j].cx, h = -Math.abs(x1 - x0) * 0.45;
-          c.strokeStyle = `rgba(243,196,107,${0.08 + 0.4 * p.w})`; c.lineWidth = 1 + p.w * 4;
+          c.strokeStyle = `rgba(${TH.rgb.accent},${0.08 + 0.4 * p.w})`; c.lineWidth = 1 + p.w * 4;
           c.globalAlpha = k * (0.7 + 0.3 * Math.sin(u * 2 + p.dl * 5));
           arc(c, x0, mix(x0, x1, k), botY, h * k); c.stroke();
         }
@@ -54,14 +55,14 @@ MJ.scene("vibe_attention_lines", {
       // "它"向各词的弧线
       const look = pr(u, tLook, 1.0, E.out), who = pr(u, tWho, 1.2, E.inOut);
       if (look > 0) {
-        c.save(); c.globalCompositeOperation = "lighter"; c.lineCap = "round";
+        c.save(); c.globalCompositeOperation = TH.blend; c.lineCap = "round";
         for (let j = 0; j < N; j++) {
           if (j === Q || !P.weights[j]) continue;
           const w = mix(0.3, P.weights[j], who) * (1 - allK * 0.4);
           const x0 = lay[Q].cx, x1 = lay[j].cx, h = 90 + Math.abs(x1 - x0) * 0.35;
           const k = clamp(look * 1.4 - Math.abs(j - Q) * 0.06);
-          c.strokeStyle = `rgba(243,196,107,${0.15 + 0.85 * w})`; c.lineWidth = 1.5 + w * 16;
-          c.shadowColor = "rgba(255,190,90,0.8)"; c.shadowBlur = w > 0.4 ? 18 : 0;
+          c.strokeStyle = `rgba(${TH.rgb.accent},${0.15 + 0.85 * w})`; c.lineWidth = 1.5 + w * 16;
+          c.shadowColor = `rgba(${TH.rgb.glow},0.8)`; c.shadowBlur = w > 0.4 ? 18 : 0;
           c.beginPath(); c.moveTo(x0, topY);
           const steps = 30;
           for (let s = 1; s <= steps * k; s++) { const t = s / steps, xm = (x0 + x1) / 2, ym = topY - h; c.lineTo((1 - t) ** 2 * x0 + 2 * (1 - t) * t * xm + t * t * x1, (1 - t) ** 2 * topY + 2 * (1 - t) * t * ym + t * t * topY); }
@@ -72,8 +73,8 @@ MJ.scene("vibe_attention_lines", {
         const nk = pr(u, tWho + 0.9, 0.6) * (1 - allK * 0.6);
         if (nk > 0) {
           c.save(); c.globalAlpha = nk;
-          for (let j = 0; j < N; j++) if (j !== Q && P.weights[j]) text(c, P.weights[j].toFixed(2), lay[j].cx, topY - 22, `600 ${P.weights[j] > 0.3 ? 36 : 24}px Georgia, serif`, P.weights[j] > 0.3 ? "#f3c46b" : "#9f9a8a", "center");
-          c.globalAlpha = nk * 0.55; text(c, P.note, W - 70, H - 30, SONG(24), "#cfc7b0", "right");
+          for (let j = 0; j < N; j++) if (j !== Q && P.weights[j]) text(c, P.weights[j].toFixed(2), lay[j].cx, topY - 22, `600 ${P.weights[j] > 0.3 ? 36 : 24}px Georgia, serif`, P.weights[j] > 0.3 ? TH.accent : TH.muted, "center");
+          c.globalAlpha = nk * 0.55; text(c, P.note, W - 70, H - 30, SONG(24), TH.muted, "right");
           c.restore();
         }
       }
@@ -83,10 +84,10 @@ MJ.scene("vibe_attention_lines", {
         if (a <= 0) continue;
         const isQ = j === Q, isAns = j === 0;
         const q = isQ ? look : 0, ans = isAns ? who : 0;
-        if (q > 0) { c.save(); c.globalCompositeOperation = "lighter"; c.globalAlpha = q * 0.6; dot(c, spQ, lay[j].cx, Y - P.fontSize * 0.35, 1.3); c.restore(); }
+        if (q > 0) { c.save(); c.globalCompositeOperation = TH.blend; c.globalAlpha = q * 0.6; dot(c, spQ, lay[j].cx, Y - P.fontSize * 0.35, 1.3); c.restore(); }
         c.save(); c.globalAlpha = a; c.textAlign = "left";
-        const col = q > 0.3 || ans > 0.3 ? "#f3c46b" : "#f2efe6";
-        glowText(c, toks[j], lay[j].x, Y + (1 - a) * 10, SONG(P.fontSize), col, q + ans > 0.3 ? 26 : 8, q + ans > 0.3 ? "rgba(255,190,90,0.9)" : "rgba(255,255,255,0.3)");
+        const col = q > 0.3 || ans > 0.3 ? TH.accent : TH.text;
+        glowText(c, toks[j], lay[j].x, Y + (1 - a) * 10, SONG(P.fontSize), col, q + ans > 0.3 ? 26 : 8, q + ans > 0.3 ? `rgba(${TH.rgb.glow},0.9)` : `rgba(${TH.rgb.shine},0.3)`);
         c.restore();
       }
       captions(c, L, u, { skip: [0], y: P.captionY, size: 50 });

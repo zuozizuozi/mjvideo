@@ -1,7 +1,9 @@
 #!/usr/bin/env node
 // mjv —— 麻酱视频引擎命令行入口（零 npm 依赖：Node 24 + Chrome + FFmpeg + Python）
 //
-//   node bin/mjv.mjs new <项目目录> [--vibe]         新建项目骨架（--vibe：无口播横屏 Vibe 风格）
+//   node bin/mjv.mjs new <项目目录> [--vibe] [--style=名]  新建项目（--vibe 无口播横屏；--style 套用风格包）
+//   node bin/mjv.mjs styles                         列出风格包
+//   node bin/mjv.mjs ref <项目> <图或视频…>          分析参考素材 → 项目 refs/（拼图、色板、节奏）
 //   node bin/mjv.mjs scenes [项目目录]              列出场景库（含项目自带场景）及其参数
 //   node bin/mjv.mjs tts <项目> [镜头id...]         合成配音（有缓存）
 //   node bin/mjv.mjs timeline <项目>                生成时间轴
@@ -79,7 +81,7 @@ function buildPage(P) {
     .filter((f) => f.src || (console.error(`⚠ 字体「${f.family}」的文件不存在，用系统字体代替`), false));
   const avatar = cfg.overlay.avatar ? path.join(pdir, cfg.overlay.avatar) : "";
   const PROJECT = { format: cfg.format, shots: cfg.shots, overlay: { ...cfg.overlay, avatar: !!(avatar && fs.existsSync(avatar)) },
-    transitionHalf: cfg.transitionHalf || 0.32, transitionSfx: cfg.transitionSfx ?? null, fontsToLoad: cfg.fontsToLoad || ["40px Heavy", "40px Kai"], timeline: tl };
+    transitionHalf: cfg.transitionHalf || 0.32, transitionSfx: cfg.transitionSfx ?? null, theme: cfg.theme || null, images: cfg.images || null, fontsToLoad: cfg.fontsToLoad || ["40px Heavy", "40px Kai"], timeline: tl };
   const html = `<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><title>${cfg.title || "mjv"}</title><style>
 ${fonts.map((f) => `@font-face { font-family: "${f.family}"; src: url("${fileUrl(f.src)}"); }`).join("\n")}
 html, body { margin: 0; width: ${cfg.format.width}px; height: ${cfg.format.height}px; overflow: hidden; background: #000; }
@@ -87,6 +89,7 @@ canvas { display: block; }
 </style></head><body>
 <canvas id="c" width="${cfg.format.width}" height="${cfg.format.height}"></canvas>
 <img id="avatar" src="${avatar && fs.existsSync(avatar) ? fileUrl(avatar) : ""}" style="display:none">
+${Object.entries(cfg.images || {}).map(([k, p]) => { const f = path.resolve(pdir, p); if (!fs.existsSync(f)) console.error(`⚠ 图片「${k}」不存在：${f}`); return `<img class="mjimg" data-key="${k}" src="${fileUrl(f)}" style="display:none">`; }).join("\n")}
 <script>window.PROJECT = ${JSON.stringify(PROJECT)};</script>
 ${(cfg.vendorScripts || []).map((v) => `<script src="${fileUrl(path.resolve(pdir, v))}"></script>`).join("\n")}
 <script src="${fileUrl(path.join(ENGINE, "lib.js"))}"></script>
@@ -152,13 +155,14 @@ function segmentPlan(P, tl, files, bounds) {
   const anyThumbs = (i) => { const m = sceneMeta(files[shots[i].scene])[0]; return m && m.needsThumbs; };
   const avatarP = cfg.overlay.avatar ? path.join(pdir, cfg.overlay.avatar) : "";
   const avatarSig = avatarP && fs.existsSync(avatarP) ? fs.statSync(avatarP).size : 0;
+  const imgSig = Object.entries(cfg.images || {}).map(([k, p]) => { const f = path.resolve(pdir, p); return [k, fs.existsSync(f) ? fs.statSync(f).size + ":" + fs.statSync(f).mtimeMs : 0]; });
   return shots.map((s, i) => {
     const f0 = i === 0 ? 0 : Math.round(bounds[i - 1] * fps), f1 = i === n - 1 ? totalFrames : Math.round(bounds[i] * fps);
     const near = [i - 1, i, i + 1].filter((k) => k >= 0 && k < n);
     const deps = anyThumbs(i) ? shots.map((x) => x.scene) : near.map((k) => shots[k].scene);
     const subs = tl.subs.filter((x) => x.t1 >= f0 / fps - 0.2 && x.t0 <= f1 / fps + 0.2);
     const hash = sha(engineSrc, [...new Set(deps)].map(sceneSrc), near.map((k) => shots[k]), near.map((k) => tl.paras[k]), subs,
-      cfg.format, cfg.overlay, cfg.fonts || null, cfg.vendorScripts || null, cfg.transitionSfx ?? null, tl.total, avatarSig, cfg.transitionHalf || 0.32, f0, f1);
+      cfg.format, cfg.overlay, cfg.fonts || null, cfg.vendorScripts || null, cfg.transitionSfx ?? null, cfg.theme || null, imgSig, tl.total, avatarSig, cfg.transitionHalf || 0.32, f0, f1);
     return { id: s.id, f0, f1, hash, file: path.join(pdir, "build", "segments", s.id + ".mp4") };
   });
 }
@@ -242,11 +246,33 @@ function newProject(dir) {
   const pdir = path.resolve(dir);
   if (fs.existsSync(path.join(pdir, "project.json"))) die("已存在 project.json：" + pdir);
   for (const d of ["scenes", "assets", "build", "output"]) fs.mkdirSync(path.join(pdir, d), { recursive: true });
-  // --vibe：无口播 Vibe 风格模板（横屏、字幕 + 配乐，见 SKILL.md 第 11 节）
-  fs.copyFileSync(path.join(ROOT, "templates", flags.vibe ? "project.vibe.example.json" : "project.example.json"), path.join(pdir, "project.json"));
-  if (!flags.vibe) fs.copyFileSync(path.join(ROOT, "assets", "avatar.png"), path.join(pdir, "assets", "avatar.png"));
+  // --vibe：无口播模板（横屏、字幕 + 配乐，见 SKILL.md 第 11 节）；--style=名字：套用 styles/ 里的风格包（主题、字体）
+  const vibe = flags.vibe || flags.style;
+  fs.copyFileSync(path.join(ROOT, "templates", vibe ? "project.vibe.example.json" : "project.example.json"), path.join(pdir, "project.json"));
+  if (!vibe) fs.copyFileSync(path.join(ROOT, "assets", "avatar.png"), path.join(pdir, "assets", "avatar.png"));
+  if (flags.style) {
+    const sp = path.join(ROOT, "styles", String(flags.style), "style.json");
+    if (!fs.existsSync(sp)) die(`没有风格包「${flags.style}」，用 node bin/mjv.mjs styles 查看`);
+    const st = readJSON(sp), cfgp = path.join(pdir, "project.json"), cfg = readJSON(cfgp);
+    cfg.style = st.name; cfg.theme = st.theme;
+    if (st.fonts) cfg.fonts = st.fonts;
+    if (st.fontsToLoad) cfg.fontsToLoad = st.fontsToLoad;
+    if (st.music) cfg.music = { ...cfg.music, ...st.music };
+    fs.writeFileSync(cfgp, JSON.stringify(cfg, null, 2));
+    console.log(`✓ 套用风格包「${st.title}」：主题已写进 project.json 的 theme，可以在此基础上改`);
+  }
   fs.copyFileSync(path.join(ROOT, "templates", "scene.template.js"), path.join(pdir, "scenes", "README_新场景模板.js.txt"));
   console.log("✓ 新项目 " + pdir + "\n  下一步：改 project.json（讲稿和分镜），然后 node bin/mjv.mjs build " + dir);
+}
+
+function listStyles() {           // 风格包：styles/<名字>/style.json
+  const d = path.join(ROOT, "styles");
+  for (const n of fs.existsSync(d) ? fs.readdirSync(d).sort() : []) {
+    const p = path.join(d, n, "style.json"); if (!fs.existsSync(p)) continue;
+    const s = readJSON(p);
+    console.log(`${n.padEnd(12)} ${s.title}  （${s.theme.mode === "light" ? "浅底" : "深底"}，纹理 ${s.theme.texture || "none"}）
+             ${s.desc}`);
+  }
 }
 
 function promote(P, name) {
@@ -264,6 +290,8 @@ const t0 = Date.now();
 switch (cmd) {
   case "new": newProject(pos[0]); break;
   case "scenes": listScenes(pos[0]); break;
+  case "styles": listStyles(); break;
+  case "ref": { const P = project(pos[0]); if (!pos[1]) die("用法：mjv ref <项目> <参考图或视频…>"); py("ref.py", P.pdir, ...pos.slice(1).map((f) => path.resolve(f))); break; }
   case "tts": { const P = project(pos[0]); py("tts.py", P.pdir, ...pos.slice(1)); break; }
   case "timeline": { const P = project(pos[0]); py("timeline.py", P.pdir); break; }
   case "check": await check(project(pos[0])); break;
@@ -280,5 +308,5 @@ switch (cmd) {
     break;
   }
   default:
-    console.log(fs.readFileSync(fileURLToPath(import.meta.url), "utf8").split("\n").slice(1, 16).join("\n").replace(/^\/\/ ?/gm, ""));
+    console.log(fs.readFileSync(fileURLToPath(import.meta.url), "utf8").split("\n").slice(1, 17).join("\n").replace(/^\/\/ ?/gm, ""));
 }

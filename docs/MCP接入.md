@@ -1,6 +1,6 @@
 # MCP 接入：让 Codex / Claude Code / Zaovra / Cursor 调用 mjvideo
 
-`mcp/server.mjs` 是一个 stdio MCP 服务（零 npm 依赖），把 `mjv` 命令行包成 7 个工具。
+`mcp/server.mjs` 是一个 stdio MCP 服务（零 npm 依赖），把 `mjv` 命令行包成 9 个工具。
 Agent 用它跑引擎命令、看静帧；**改 project.json 和场景代码仍然用 Agent 自己的文件编辑工具**。
 
 ## 前置依赖
@@ -11,7 +11,9 @@ Agent 用它跑引擎命令、看静帧；**改 project.json 和场景代码仍�
 |---|---|
 | `mjv_guide` | 读使用手册（SKILL.md），可按节号取（如 `{"section":"11"}`） |
 | `mjv_scenes` | 列出场景库和项目场景的用途、参数 |
-| `mjv_new_project` | 新建项目（`vibe: true` 用无口播横屏模板） |
+| `mjv_new_project` | 新建项目（`vibe: true` 无口播横屏；`style` 套用风格包） |
+| `mjv_styles` | 列出风格包 |
+| `mjv_ref` | 分析参考图 / 参考视频：返回关键帧拼图、色板、节奏报告（图片直接给 Agent 看） |
 | `mjv_project_info` | 项目状态：镜头时长、最近质检、成片路径 |
 | `mjv_run` | 跑命令：tts / timeline / check / render / audio / mux / validate / build / promote |
 | `mjv_stills` | 抽静帧，按镜头拼图，**直接返回图片**给 Agent 看 |
@@ -64,4 +66,4 @@ node mcp/server.mjs
 启动后会在 stderr 打印引擎和项目目录；stdout 只输出协议消息。
 
 ## 一条视频的典型调用顺序
-`mjv_guide` → `mjv_new_project` → （Agent 编辑 project.json、写场景）→ `mjv_run timeline` → `mjv_run check` → `mjv_stills`（看图、改代码，反复）→ `mjv_run render` → `mjv_job`（等渲染）→ `mjv_run audio` → `mjv_run mux` → `mjv_run validate`
+`mjv_guide` → `mjv_new_project`（可选 `style`）→ 有参考素材就 `mjv_ref` → （Agent 写美术方案 design.md、theme、场景）→ `mjv_run timeline` → `mjv_run check` → `mjv_stills`（看图、改代码，反复）→ `mjv_run render` → `mjv_job`（等渲染）→ `mjv_run audio` → `mjv_run mux` → `mjv_run validate`

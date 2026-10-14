@@ -15,6 +15,7 @@ MJ.scene("vibe_neural_net", {
     captionY: 990,
   },
   create(ctx) {
+    const TH = MJ.theme;                                 // 颜色、字体、叠加方式都从主题取（见 engine/lib.js 的 THEME_DEFAULT）
     const { W, H, clamp, mix, E, pr, rng, rr, text, SONG, SONGH, MONO, captions, glowText, bgVibe, glowDot, dot, GOLD, ICE } = MJ.lib;
     const { sfx } = ctx, P = ctx.params, L = ctx.lines;
     const T = (i) => (L[i] ? L[i].t0 : 0);
@@ -30,7 +31,7 @@ MJ.scene("vibe_neural_net", {
     sfx(tTwist + 0.2, "tick", 0.25); sfx(tTwist + 0.6, "tick", 0.25); sfx(tOut + 0.4, "chime", 0.45);
     // 静态底层连线预画到离屏画布
     const base = MJ.lib.canvas(W, H), bx = base.getContext("2d");
-    for (const e of edges) { bx.strokeStyle = `rgba(150,170,220,${0.04 + e.w * 0.1})`; bx.lineWidth = 1; bx.beginPath(); bx.moveTo(e.a.x, e.a.y); bx.lineTo(e.b.x, e.b.y); bx.stroke(); }
+    for (const e of edges) { bx.strokeStyle = `rgba(${TH.rgb.coldLine},${0.04 + e.w * 0.1})`; bx.lineWidth = 1; bx.beginPath(); bx.moveTo(e.a.x, e.a.y); bx.lineTo(e.b.x, e.b.y); bx.stroke(); }
     const spG = glowDot(GOLD, 26), spI = glowDot(ICE, 22), spS = glowDot(GOLD, 10);
     // 信号前沿：从输入层（x=430）走到输出层（x=1470）
     const frontX = (u) => mix(LX[0] - 60, LX[4] + 80, pr(u, tPass + 0.2, 2.6, E.inOut)) + Math.max(0, u - tPass - 2.8) * 0;
@@ -42,7 +43,7 @@ MJ.scene("vibe_neural_net", {
       c.save(); c.globalAlpha = netA; c.drawImage(base, 0, 0); c.restore();
       const fx = frontX(u), passed = u > tPass;
       // 发亮的连线（只画权重大的，亮度跟信号前沿和旋钮拧动有关）
-      c.save(); c.globalCompositeOperation = "lighter"; c.lineWidth = 1.6;
+      c.save(); c.globalCompositeOperation = TH.blend; c.lineWidth = 1.6;
       const twist = pr(u, tTwist, 0.4) * (1 - pr(u, tTwist + 2.2, 0.8));
       for (const e of edges) {
         if (e.w < 0.35) continue;
@@ -50,7 +51,7 @@ MJ.scene("vibe_neural_net", {
         const flick = twist * (0.5 + 0.5 * Math.sin(u * 9 + e.ph));
         const a = netA * e.w * (0.12 + 0.6 * lit + 0.5 * flick);
         if (a < 0.02) continue;
-        c.strokeStyle = `rgba(243,196,107,${clamp(a)})`;
+        c.strokeStyle = `rgba(${TH.rgb.accent},${clamp(a)})`;
         c.beginPath(); c.moveTo(e.a.x, e.a.y); c.lineTo(e.b.x, e.b.y); c.stroke();
       }
       // 脉冲：沿高权重连线跑的光点
@@ -70,14 +71,14 @@ MJ.scene("vibe_neural_net", {
       c.restore();
       // 节点实心圈
       c.save(); c.globalAlpha = netA;
-      nodes.forEach((layer) => layer.forEach((n) => { c.fillStyle = "#0b0f20"; c.beginPath(); c.arc(n.x, n.y, 7, 0, 7); c.fill(); c.strokeStyle = "rgba(243,196,107,0.7)"; c.lineWidth = 2; c.stroke(); }));
+      nodes.forEach((layer) => layer.forEach((n) => { c.fillStyle = TH.panelSolid; c.beginPath(); c.arc(n.x, n.y, 7, 0, 7); c.fill(); c.strokeStyle = `rgba(${TH.rgb.accent},0.7)`; c.lineWidth = 2; c.stroke(); }));
       c.restore();
       // 小旋钮：拧一下
       if (twist > 0) {
         for (const e of knobs) {
           const x = mix(e.a.x, e.b.x, 0.5), y = mix(e.a.y, e.b.y, 0.5), ang = -1.2 + Math.sin((u - tTwist) * 3 + e.ph) * 1.1;
-          c.save(); c.globalAlpha = twist; c.strokeStyle = "#f3c46b"; c.lineWidth = 2.5; c.shadowColor = "rgba(255,190,90,0.8)"; c.shadowBlur = 10;
-          c.fillStyle = "#0b0f20"; c.beginPath(); c.arc(x, y, 22, 0, 7); c.fill(); c.stroke();
+          c.save(); c.globalAlpha = twist; c.strokeStyle = TH.accent; c.lineWidth = 2.5; c.shadowColor = `rgba(${TH.rgb.glow},0.8)`; c.shadowBlur = 10;
+          c.fillStyle = TH.panelSolid; c.beginPath(); c.arc(x, y, 22, 0, 7); c.fill(); c.stroke();
           c.beginPath(); c.moveTo(x, y); c.lineTo(x + Math.cos(ang) * 16, y + Math.sin(ang) * 16); c.stroke(); c.restore();
         }
       }
@@ -85,14 +86,14 @@ MJ.scene("vibe_neural_net", {
       const inA = pr(u, tIn, 0.6), split = pr(u, tIn + 1.2, 0.9, E.inOut);
       if (inA > 0) {
         c.save(); c.globalAlpha = inA * (1 - split);
-        glowText(c, P.input, 190, 540 + 40, SONGH(130), "#f2efe6", 24, "rgba(255,230,180,0.5)"); c.textAlign = "left";
+        glowText(c, P.input, 190, 540 + 40, SONGH(130), TH.text, 24, `rgba(${TH.rgb.halo},0.5)`); c.textAlign = "left";
         c.restore();
         c.save(); c.textAlign = "center";
         nums.forEach((s, k) => {
           const n = nodes[0][k], slide = pr(u, tIn + 2.2, 0.8, E.inOut);
           const x = mix(mix(250, 250, split), n.x - 95, slide), y = mix(540, n.y + 10, split);
           c.globalAlpha = split * (1 - pr(u, tPass + 0.6, 0.6) * 0.6);
-          text(c, s, x, y, MONO(26), "#8fc4ff", "center");
+          text(c, s, x, y, MONO(26), TH.cold, "center");
         });
         c.restore();
       }
@@ -102,11 +103,11 @@ MJ.scene("vibe_neural_net", {
         c.save(); c.globalAlpha = outA;
         P.outputs.forEach(([w, p], i) => {
           const y = 380 + i * 110, g = pr(u, tOut + 0.3 + i * 0.12, 0.8, E.out), top = i === 0;
-          text(c, w, 1570, y + 40, SONG(44), top ? "#f3c46b" : "#d8d2c2");
-          rr(c, 1680, y + 6, 180 * p / 100 * g + 2, 40, 8); c.fillStyle = top ? "rgba(243,196,107,0.85)" : "rgba(160,170,200,0.4)"; c.fill();
-          text(c, `${Math.round(p * g)}%`, 1680, y + 84, `600 26px Georgia, serif`, top ? "#f3c46b" : "#aaa595");
+          text(c, w, 1570, y + 40, SONG(44), top ? TH.accent : TH.dim);
+          rr(c, 1680, y + 6, 180 * p / 100 * g + 2, 40, 8); c.fillStyle = top ? `rgba(${TH.rgb.accent},0.85)` : `rgba(${TH.rgb.bar},0.4)`; c.fill();
+          text(c, `${Math.round(p * g)}%`, 1680, y + 84, `600 26px Georgia, serif`, top ? TH.accent : TH.muted);
         });
-        c.globalAlpha = outA * 0.55; text(c, P.note, W - 70, H - 30, SONG(24), "#cfc7b0", "right");
+        c.globalAlpha = outA * 0.55; text(c, P.note, W - 70, H - 30, SONG(24), TH.muted, "right");
         c.restore();
       }
       captions(c, L, u, { y: P.captionY, size: 50 });

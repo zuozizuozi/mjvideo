@@ -19,6 +19,7 @@ MJ.scene("vibe_embedding_stars", {
     captionY: 990,
   },
   create(ctx) {
+    const TH = MJ.theme;                                 // 颜色、字体、叠加方式都从主题取（见 engine/lib.js 的 THEME_DEFAULT）
     const { W, H, clamp, mix, E, pr, rng, text, SONG, captions, bgVibe, glowDot, dot, GOLD, PAPER, ICE } = MJ.lib;
     const { sfx } = ctx, P = ctx.params, L = ctx.lines;
     const T = (i) => (L[i] ? L[i].t0 : 0);
@@ -34,15 +35,15 @@ MJ.scene("vibe_embedding_stars", {
     const tiny = Array.from({ length: 160 }, () => ({ x: R() * W, y: R() * H, a: 0.1 + R() * 0.4, ph: R() * 6.28 }));
     const tGroup = T(2) + 0.2, tFocus = T(3) + 0.1;
     sfx(T(0), "shimmer", 0.35); sfx(tGroup, "swell", 0.5); sfx(tGroup + 2.4, "chime", 0.4); sfx(tFocus + 0.8, "chime", 0.45); sfx(tFocus + 1.6, "chime", 0.45);
-    const spG = glowDot(GOLD, 22), spP = glowDot(PAPER, 18), halo = glowDot([200, 170, 120], 180);
+    const spG = glowDot(GOLD, 22), spP = glowDot(PAPER, 18), halo = glowDot(TH.rgb.halo, 180);
 
     return (c, u) => {
       bgVibe(c, u, { dust: 40 });
       // 镜头：fk 从 0 到 1，把 focus 点推到画面中央并放大 zoom 倍
       const fk = pr(u, tFocus, 1.6, E.inOut);
       const cam = (x, y) => [mix(x, W / 2 + (x - P.focus[0]) * P.zoom, fk), mix(y, H / 2 - 40 + (y - P.focus[1]) * P.zoom, fk)];
-      c.save(); c.globalCompositeOperation = "lighter";
-      for (const t of tiny) { c.globalAlpha = t.a * (0.6 + 0.4 * Math.sin(u + t.ph)); c.fillStyle = "#cfd8ff"; c.fillRect(t.x, t.y, 1.5, 1.5); }
+      c.save(); c.globalCompositeOperation = TH.blend;
+      for (const t of tiny) { c.globalAlpha = t.a * (0.6 + 0.4 * Math.sin(u + t.ph)); c.fillStyle = TH.cold; c.fillRect(t.x, t.y, 1.5, 1.5); }
       // 星团光晕
       const gk = pr(u, tGroup + 1.6, 1.2);
       if (gk > 0) P.groups.forEach((g) => { const [x, y] = cam(...g.at); c.globalAlpha = gk * 0.22 * (1 - fk * 0.7); dot(c, halo, x, y, 1.2); });
@@ -60,7 +61,7 @@ MJ.scene("vibe_embedding_stars", {
       const arrow = (p0, p1, k) => {
         if (k <= 0) return;
         const x1 = mix(p0[0], p1[0], k), y1 = mix(p0[1], p1[1], k), ang = Math.atan2(p1[1] - p0[1], p1[0] - p0[0]);
-        c.save(); c.strokeStyle = "#f3c46b"; c.fillStyle = "#f3c46b"; c.lineWidth = 3.5; c.shadowColor = "rgba(255,190,90,0.9)"; c.shadowBlur = 14; c.setLineDash([14, 10]);
+        c.save(); c.strokeStyle = TH.accent; c.fillStyle = TH.accent; c.lineWidth = 3.5; c.shadowColor = `rgba(${TH.rgb.glow},0.9)`; c.shadowBlur = 14; c.setLineDash([14, 10]);
         c.beginPath(); c.moveTo(p0[0], p0[1]); c.lineTo(x1, y1); c.stroke(); c.setLineDash([]);
         if (k > 0.9) { c.beginPath(); c.moveTo(x1, y1); c.lineTo(x1 - Math.cos(ang - 0.4) * 22, y1 - Math.sin(ang - 0.4) * 22); c.lineTo(x1 - Math.cos(ang + 0.4) * 22, y1 - Math.sin(ang + 0.4) * 22); c.closePath(); c.fill(); }
         c.restore();
@@ -70,13 +71,13 @@ MJ.scene("vibe_embedding_stars", {
       for (const { st, k, xy: [x, y] } of pos) {
         const isP = st.gi === -1, dim = isP ? 1 : 1 - fk * 0.75;
         const hi = isP && st.key === "d" ? pr(u, tFocus + 2.2, 0.6) : 0;
-        c.save(); c.globalCompositeOperation = "lighter"; c.globalAlpha = (0.75 + 0.25 * Math.sin(u * 1.8 + st.ph)) * dim * pr(u, 0, 0.6);
+        c.save(); c.globalCompositeOperation = TH.blend; c.globalAlpha = (0.75 + 0.25 * Math.sin(u * 1.8 + st.ph)) * dim * pr(u, 0, 0.6);
         dot(c, isP || k > 0.5 ? spG : spP, x, y, 1 + hi * 0.8); c.restore();
         c.save(); c.globalAlpha = dim * pr(u, 0, 0.6) * (0.55 + 0.45 * k);
-        text(c, st.w, x + 20, y + 10, SONG(isP ? mix(30, 40, fk) : 28), hi > 0 ? "#f3c46b" : "#ece6d6"); c.restore();
+        text(c, st.w, x + 20, y + 10, SONG(isP ? mix(30, 40, fk) : 28), hi > 0 ? TH.accent : TH.dim); c.restore();
       }
       const nk = pr(u, tFocus + 0.4, 0.6);
-      if (nk > 0) { c.save(); c.globalAlpha = nk * 0.55; text(c, P.note, W - 70, H - 30, SONG(24), "#cfc7b0", "right"); c.restore(); }
+      if (nk > 0) { c.save(); c.globalAlpha = nk * 0.55; text(c, P.note, W - 70, H - 30, SONG(24), TH.muted, "right"); c.restore(); }
       captions(c, L, u, { y: P.captionY, size: 50 });
     };
   },

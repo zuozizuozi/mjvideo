@@ -10,6 +10,7 @@ MJ.scene("vibe_particle_figure", {
   design: [1920, 1080],
   params: { phase: "converge", note: "示意", captionY: 975 },
   create(ctx) {
+    const TH = MJ.theme;                                 // 颜色、字体、叠加方式都从主题取（见 engine/lib.js 的 THEME_DEFAULT）
     const { W, H, clamp, mix, E, pr, rng, rr, text, SONG, captions, bgVibe, glowDot, dot, samplePoints, mixRGB, GOLD, ICE } = MJ.lib;
     const { sfx } = ctx, P = ctx.params, L = ctx.lines, PH = P.phase;
     const T = (i) => (L[i] ? L[i].t0 : 0), END = ctx.shot.dur;
@@ -43,8 +44,8 @@ MJ.scene("vibe_particle_figure", {
       const chaos = PH === "converge" ? pr(u, T(1), 0.6) * (1 - k) : 0;
       const appear = PH === "converge" ? pr(u, 0, 1.0) : 1;
       // 汇聚完成后的柔光
-      if (k > 0.8) { c.save(); c.globalCompositeOperation = "lighter"; c.globalAlpha = (k - 0.8) * 5 * 0.18 * (0.85 + 0.15 * Math.sin(u * 1.5)); dot(c, spBig, W / 2, 560, 2.2); c.restore(); }
-      c.save(); c.globalCompositeOperation = "lighter";
+      if (k > 0.8) { c.save(); c.globalCompositeOperation = TH.blend; c.globalAlpha = (k - 0.8) * 5 * 0.18 * (0.85 + 0.15 * Math.sin(u * 1.5)); dot(c, spBig, W / 2, 560, 2.2); c.restore(); }
+      c.save(); c.globalCompositeOperation = TH.blend;
       const col = mixRGB(ICE, GOLD, warm);
       c.fillStyle = `rgb(${col})`;
       for (const p of pts) {
@@ -60,14 +61,14 @@ MJ.scene("vibe_particle_figure", {
       // 神经元连线
       if (PH === "neurons") {
         const span = [T(0) + 0.3, T(2) + 0.2];
-        c.save(); c.globalCompositeOperation = "lighter"; c.lineWidth = 1.6;
+        c.save(); c.globalCompositeOperation = TH.blend; c.lineWidth = 1.6;
         for (const l of links) {
           const tl = mix(span[0], span[1], l.t), lk = pr(u, tl, 0.4);
           if (lk <= 0) continue;
           let cw = pr(u, tl + 0.6, 1.2);                   // 冷蓝 → 暖金
           let flash = 0;
           if (l.fix) { const tf = T(2) + 0.3 + l.t * 1.8; flash = Math.max(0, 1 - Math.abs(u - tf) * 3); cw = u < tf ? Math.min(cw, 0.2) : Math.max(cw, pr(u, tf, 0.5)); }
-          const cc = mixRGB(mixRGB(ICE, GOLD, cw), [255, 120, 110], flash * 0.8);
+          const cc = mixRGB(mixRGB(ICE, GOLD, cw), TH.rgb.warn, flash * 0.8);
           c.strokeStyle = `rgba(${cc},${0.25 + 0.5 * lk + flash * 0.5})`;
           c.beginPath(); c.moveTo(l.a.x, l.a.y); c.lineTo(mix(l.a.x, l.b.x, lk), mix(l.a.y, l.b.y, lk)); c.stroke();
           if (lk >= 1 && Math.sin(u * 2 + l.ph) > 0.92) { const t = (u * 1.3 + l.ph) % 1; c.globalAlpha = 0.9; dot(c, spG, mix(l.a.x, l.b.x, t), mix(l.a.y, l.b.y, t), 1); c.globalAlpha = 1; }
@@ -80,10 +81,10 @@ MJ.scene("vibe_particle_figure", {
         if (gA > 0) {
           const X0 = 1460, Y0 = 640, GW = 360, GH = 170, n = Math.floor(curve.length * pr(u, T(2) + 0.2, 1.8, E.inOut));
           c.save(); c.globalAlpha = gA;
-          rr(c, X0 - 30, Y0 - 56, GW + 60, GH + 90, 16); c.fillStyle = "rgba(6,8,18,0.78)"; c.fill();
-          text(c, "误差（" + P.note + "）", X0, Y0 - 16, SONG(24), "#bdb5a0");
-          c.strokeStyle = "rgba(255,255,255,0.2)"; c.lineWidth = 1; c.beginPath(); c.moveTo(X0, Y0); c.lineTo(X0, Y0 + GH); c.lineTo(X0 + GW, Y0 + GH); c.stroke();
-          c.strokeStyle = "#f3c46b"; c.lineWidth = 3; c.beginPath();
+          rr(c, X0 - 30, Y0 - 56, GW + 60, GH + 90, 16); c.fillStyle = `rgba(${TH.rgb.panel},0.78)`; c.fill();
+          text(c, "误差（" + P.note + "）", X0, Y0 - 16, SONG(24), TH.muted);
+          c.strokeStyle = `rgba(${TH.rgb.shine},0.2)`; c.lineWidth = 1; c.beginPath(); c.moveTo(X0, Y0); c.lineTo(X0, Y0 + GH); c.lineTo(X0 + GW, Y0 + GH); c.stroke();
+          c.strokeStyle = TH.accent; c.lineWidth = 3; c.beginPath();
           for (let i = 0; i < n; i++) { const x = X0 + (i / (curve.length - 1)) * GW, y = Y0 + GH - curve[i] * GH; i ? c.lineTo(x, y) : c.moveTo(x, y); }
           c.stroke(); c.restore();
         }

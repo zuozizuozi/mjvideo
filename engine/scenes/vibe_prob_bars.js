@@ -16,6 +16,7 @@ MJ.scene("vibe_prob_bars", {
     captionY: 960,
   },
   create(ctx) {
+    const TH = MJ.theme;                                 // 颜色、字体、叠加方式都从主题取（见 engine/lib.js 的 THEME_DEFAULT）
     const { W, H, clamp, mix, E, pr, rng, rr, text, SONG, SONGH, captions, glowText, bgVibe, glowDot, dot, GOLD } = MJ.lib;
     const { sfx } = ctx, P = ctx.params, L = ctx.lines;
     const T = (i) => (L[i] ? L[i].t0 : 0);
@@ -54,7 +55,7 @@ MJ.scene("vibe_prob_bars", {
         let x = X0, idx = rows.slice(0, i).join("").length;
         for (const ch of s) {
           const gold = idx >= pl; c.font = SONG(FONT);
-          glowText(c, ch, x, yTop + i * 100, SONG(FONT), gold ? "#f3c46b" : "#f2efe6", gold ? 16 : 6, gold ? "rgba(255,190,90,0.7)" : "rgba(255,255,255,0.3)");
+          glowText(c, ch, x, yTop + i * 100, SONG(FONT), gold ? TH.accent : TH.text, gold ? 16 : 6, gold ? `rgba(${TH.rgb.glow},0.7)` : `rgba(${TH.rgb.shine},0.3)`);
           x += c.measureText(ch).width; idx++;
         }
       });
@@ -64,7 +65,7 @@ MJ.scene("vibe_prob_bars", {
       const slotX = X0 + lastW + 10, slotY = yTop + (rows.length - 1) * 100;
       const blink = 0.45 + 0.4 * Math.cos(u * 5);
       c.globalAlpha = showA * blink;
-      rr(c, slotX, slotY - FONT * 0.82, FONT * 0.9, FONT * 1.02, 10); c.strokeStyle = "#f3c46b"; c.lineWidth = 3; c.setLineDash([10, 8]); c.stroke(); c.setLineDash([]);
+      rr(c, slotX, slotY - FONT * 0.82, FONT * 0.9, FONT * 1.02, 10); c.strokeStyle = TH.accent; c.lineWidth = 3; c.setLineDash([10, 8]); c.stroke(); c.setLineDash([]);
       c.restore();
 
       // 概率条
@@ -79,24 +80,24 @@ MJ.scene("vibe_prob_bars", {
           const y = BY + i * ROW, top = i === 0;
           const sel = top ? pr(u, rs + 0.35, 0.3) : 0;
           const fly = top ? pr(u, rs + 0.6, 0.4, E.inOut) : 0;
-          text(c, w, BX, y + 44, SONG(52), top ? "#f3c46b" : "#d8d2c2", "left");
+          text(c, w, BX, y + 44, SONG(52), top ? TH.accent : TH.dim, "left");
           const bw = BWMAX * p / 100 * grow;
-          rr(c, BX + 140, y + 4, BWMAX, 52, 10); c.fillStyle = "rgba(255,255,255,0.05)"; c.fill();
-          if (bw > 2) { rr(c, BX + 140, y + 4, bw, 52, 10); c.fillStyle = top ? `rgba(243,196,107,${0.55 + 0.4 * sel})` : "rgba(160,170,200,0.35)"; c.fill(); }
-          text(c, `${Math.round(p * grow)}%`, BX + 160 + BWMAX, y + 44, `600 34px Georgia, serif`, top ? "#f3c46b" : "#aaa595", "left");
+          rr(c, BX + 140, y + 4, BWMAX, 52, 10); c.fillStyle = `rgba(${TH.rgb.shine},0.05)`; c.fill();
+          if (bw > 2) { rr(c, BX + 140, y + 4, bw, 52, 10); c.fillStyle = top ? `rgba(${TH.rgb.accent},${0.55 + 0.4 * sel})` : `rgba(${TH.rgb.bar},0.35)`; c.fill(); }
+          text(c, `${Math.round(p * grow)}%`, BX + 160 + BWMAX, y + 44, `600 34px Georgia, serif`, top ? TH.accent : TH.muted, "left");
           if (top && sel > 0) {
-            c.save(); c.globalCompositeOperation = "lighter"; c.globalAlpha = barsA * sel * (1 - fly) * 0.7; dot(c, sprite, BX + 26, y + 30, 1.2); c.restore();
+            c.save(); c.globalCompositeOperation = TH.blend; c.globalAlpha = barsA * sel * (1 - fly) * 0.7; dot(c, sprite, BX + 26, y + 30, 1.2); c.restore();
           }
           // 飞向句尾
           if (top && fly > 0 && fly < 1) {
             const fx = mix(BX, slotX, fly), fy = mix(y + 44, slotY, fly) - Math.sin(fly * Math.PI) * 80;
-            c.save(); c.globalCompositeOperation = "lighter"; dot(c, sprite, fx + 25, fy - 25, 1.4); c.restore();
-            text(c, w, fx, fy, SONG(FONT * mix(0.72, 1, fly)), "#f3c46b", "left");
+            c.save(); c.globalCompositeOperation = TH.blend; dot(c, sprite, fx + 25, fy - 25, 1.4); c.restore();
+            text(c, w, fx, fy, SONG(FONT * mix(0.72, 1, fly)), TH.accent, "left");
           }
         });
         c.restore();
         // 右下角"示意"
-        c.save(); c.globalAlpha = barsA * 0.55; text(c, P.note, W - 70, H - 40, SONG(24), "#cfc7b0", "right"); c.restore();
+        c.save(); c.globalAlpha = barsA * 0.55; text(c, P.note, W - 70, H - 40, SONG(24), TH.muted, "right"); c.restore();
       }
       captions(c, L, u, { y: P.captionY });
     };

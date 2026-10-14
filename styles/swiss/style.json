@@ -1,0 +1,48 @@
+{
+  "name": "swiss",
+  "title": "极简瑞士",
+  "desc": "近白底 + 细网格、黑色无衬线粗体、正红强调、钴蓝冷色，没有发光。干净、理性、像设计杂志或数据报告。适合数据、商业、产品、方法论类话题。",
+  "theme": {
+    "name": "swiss",
+    "mode": "light",
+    "texture": "grid",
+    "bg": {
+      "center": "#f4f3ee",
+      "edge": "#e8e6df"
+    },
+    "dust": {
+      "count": 0
+    },
+    "text": "#111111",
+    "dim": "#333333",
+    "muted": "#7a7a7a",
+    "accent": "#e2231a",
+    "cold": "#1f4bd8",
+    "highlight": "#111111",
+    "warn": "#e2231a",
+    "glow": "#e2231a",
+    "shine": "#111111",
+    "halo": "#e2231a",
+    "coldDot": "#1f4bd8",
+    "coldLine": "#a3add0",
+    "bar": "#c4c4c4",
+    "panel": "#ffffff",
+    "card": "#ffffff",
+    "panelSolid": "#ffffff",
+    "terrainLow": "#f4d4d1",
+    "terrainHigh": "#f4f3ee",
+    "textGlow": 0,
+    "hiGlow": 0,
+    "fonts": {
+      "title": "\"Microsoft YaHei\", \"PingFang SC\", \"Noto Sans CJK SC\", sans-serif",
+      "body": "\"Microsoft YaHei\", \"PingFang SC\", \"Noto Sans CJK SC\", sans-serif",
+      "titleWeight": "700",
+      "bodyWeight": "700"
+    },
+    "glowScale": 0.15
+  },
+  "fontsToLoad": [],
+  "music": {
+    "bpm": 90
+  }
+}

@@ -19,7 +19,7 @@ import { fileURLToPath } from "node:url";
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const PROJECTS = path.resolve(process.env.MJV_PROJECTS || path.join(ROOT, "projects"));
 const DEFAULT_WAIT = Number(process.env.MJV_MCP_WAIT || 3.5);
-const VERSION = "0.1.0";
+const VERSION = "0.2.0";
 const log = (...a) => process.stderr.write("[mjvideo-mcp] " + a.join(" ") + "\n");   // stdout 只能写协议消息
 
 // ---------------- 工具定义 ----------------
@@ -33,8 +33,14 @@ const TOOLS = [
     description: "列出场景库（以及某个项目自带的场景）：名字、用途说明、尺寸、可调参数和 cues。选场景前先看这个。",
     inputSchema: { type: "object", properties: { project: projectProp } } },
   { name: "mjv_new_project",
-    description: "新建一个视频项目，返回项目路径和 project.json 模板。vibe=true 用无口播横屏 Vibe 风格模板（字幕 + 配乐），否则用竖屏配音模板。",
-    inputSchema: { type: "object", properties: { name: { type: "string", description: "项目名，只用字母数字下划线" }, vibe: { type: "boolean" } }, required: ["name"] } },
+    description: "新建一个视频项目，返回项目路径和 project.json 模板。vibe=true 用无口播横屏模板（字幕 + 配乐），否则用竖屏配音模板。style=风格包名（见 mjv_styles）会把该风格的主题写进 project.json，之后可以随意改。",
+    inputSchema: { type: "object", properties: { name: { type: "string", description: "项目名，只用字母数字下划线" }, vibe: { type: "boolean" }, style: { type: "string", description: "风格包名，如 paper / neon / swiss / dark-gold" } }, required: ["name"] } },
+  { name: "mjv_styles",
+    description: "列出风格包（styles/）：名字、气质、适合的话题。风格包是起点，不是终点：选一个后可以在 project.json 的 theme 里改配色、字体、纹理，或者完全自己定。",
+    inputSchema: { type: "object", properties: {} } },
+  { name: "mjv_ref",
+    description: "分析参考图 / 参考视频（本机文件路径）：复制到项目 refs/，生成关键帧拼图（视频按时间取 24 帧）、主色和强调色色板、镜头切换节奏和运动量报告，并把拼图和色板作为图片返回。用来提炼风格写美术方案，不是照抄。录屏素材最好先裁掉手机界面。",
+    inputSchema: { type: "object", properties: { project: projectProp, files: { type: "array", items: { type: "string" }, description: "参考素材的绝对路径（图片、视频或文件夹）" }, wait_seconds: waitProp }, required: ["project", "files"] } },
   { name: "mjv_project_info",
     description: "查看项目状态：路径、镜头列表和时长（来自时间轴）、最近一次质检结果、成片路径。",
     inputSchema: { type: "object", properties: { project: projectProp }, required: ["project"] } },
@@ -135,13 +141,28 @@ const handlers = {
     const args = ["scenes"]; if (project) args.push(resolveProject(project));
     return waitJob(startJob("scenes", args), 20);
   },
-  async mjv_new_project({ name, vibe }) {
+  async mjv_new_project({ name, vibe, style }) {
     if (!/^[\w-]+$/.test(name || "")) return fail("项目名只能用字母、数字、下划线、横线");
+    if (style && !/^[\w-]+$/.test(style)) return fail("风格包名不合法");
     const pdir = path.join(PROJECTS, name);
-    const job = startJob("new", ["new", pdir, ...(vibe ? ["--vibe"] : [])]);
+    const job = startJob("new", ["new", pdir, ...(vibe ? ["--vibe"] : []), ...(style ? [`--style=${style}`] : [])]);
     await job.done;
     if (job.status !== "done") return jobReport(job);
     return { content: [text(`✓ 新项目：${pdir}\n下一步：改 project.json（格式见 mjv_guide），需要新画面时在 ${path.join(pdir, "scenes")} 写场景。\n\n--- project.json ---\n` + fs.readFileSync(path.join(pdir, "project.json"), "utf8"))] };
+  },
+  async mjv_styles() { return waitJob(startJob("styles", ["styles"]), 20); },
+  async mjv_ref({ project, files, wait_seconds }) {
+    const pdir = resolveProject(project);
+    const list = (files || []).map((f) => path.resolve(f));
+    const missing = list.filter((f) => !fs.existsSync(f)); if (missing.length) return fail("找不到：" + missing.join("、"));
+    const refs = path.join(pdir, "refs"), before = new Set(fs.existsSync(refs) ? fs.readdirSync(refs) : []);
+    const after = async () => {
+      const outs = [text(fs.readFileSync(path.join(refs, "ref_report.md"), "utf8"))];
+      for (const f of fs.readdirSync(refs).filter((x) => /^(sheet|palette)_.*\.(jpg|png)$/.test(x) && !before.has(x)).sort())
+        outs.push(text(f), { type: "image", data: fs.readFileSync(path.join(refs, f)).toString("base64"), mimeType: f.endsWith(".png") ? "image/png" : "image/jpeg" });
+      return outs;
+    };
+    return waitJob(startJob(`ref ${path.basename(pdir)}`, ["ref", pdir, ...list], { after }), wait_seconds);
   },
   async mjv_project_info({ project }) {
     const pdir = resolveProject(project), b = (...p) => path.join(pdir, "build", ...p);
@@ -202,7 +223,7 @@ async function handle(msg) {
     const v = SUPPORTED.includes(params?.protocolVersion) ? params.protocolVersion : SUPPORTED[0];
     return reply(id, { protocolVersion: v, capabilities: { tools: { listChanged: false } },
       serverInfo: { name: "mjvideo", version: VERSION },
-      instructions: "mjvideo：用代码（Canvas + 无头 Chrome + FFmpeg）做讲解视频的引擎，不调用视频生成模型。第一次使用先调 mjv_guide 读手册。流程：mjv_new_project → 编辑 project.json 和场景代码 → mjv_run timeline/check → mjv_stills 看画面并修改 → mjv_run render → audio → mux → validate。长任务会返回 job_id，用 mjv_job 查。" });
+      instructions: "mjvideo：用代码（Canvas + 无头 Chrome + FFmpeg）做讲解视频的引擎，不调用视频生成模型。第一次使用先调 mjv_guide 读手册。流程：mjv_new_project（可选 style）→ 有参考素材先 mjv_ref → 写美术方案 design.md、改 project.json 的 theme 和场景代码 → mjv_run timeline/check → mjv_stills 看画面并修改 → mjv_run render → audio → mux → validate。风格和画面自由发挥，场景库只是零件。长任务会返回 job_id，用 mjv_job 查。" });
   }
   if (method === "ping") return reply(id, {});
   if (method === "tools/list") return reply(id, { tools: TOOLS });

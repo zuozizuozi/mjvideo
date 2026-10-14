@@ -1,0 +1,48 @@
+{
+  "name": "neon",
+  "title": "霓虹终端",
+  "desc": "近黑底 + 扫描线、荧光绿主色、品红做冷色，等宽字体字幕。像黑客终端或赛博朋克屏幕。适合编程、网络安全、AI 技术内幕、科技新闻。",
+  "theme": {
+    "name": "neon",
+    "mode": "dark",
+    "texture": "scanline",
+    "vignette": 0.35,
+    "bg": {
+      "center": "#0b1a16",
+      "edge": "#010304"
+    },
+    "dust": {
+      "color": "#39ff9c",
+      "count": 60
+    },
+    "text": "#d8ffe9",
+    "dim": "#9fdcbf",
+    "muted": "#5f8f7a",
+    "accent": "#39ff9c",
+    "cold": "#ff4fd8",
+    "highlight": "#eaffff",
+    "warn": "#ff4f6a",
+    "glow": "#39ff9c",
+    "shine": "#a0ffd0",
+    "halo": "#a0ffd0",
+    "coldDot": "#ff4fd8",
+    "coldLine": "#2f6f6a",
+    "bar": "#2f5f55",
+    "panel": "#020806",
+    "card": "#06140f",
+    "panelSolid": "#020806",
+    "terrainLow": "#0f3d2e",
+    "terrainHigh": "#020604",
+    "fonts": {
+      "title": "Consolas, \"Microsoft YaHei\", monospace",
+      "body": "Consolas, \"Microsoft YaHei\", monospace",
+      "titleWeight": "700",
+      "bodyWeight": "700"
+    },
+    "glowScale": 1.3
+  },
+  "fontsToLoad": [],
+  "music": {
+    "bpm": 84
+  }
+}

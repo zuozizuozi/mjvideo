@@ -15,6 +15,7 @@ MJ.scene("vibe_loss_valley", {
     captionY: 990,
   },
   create(ctx) {
+    const TH = MJ.theme;                                 // 颜色、字体、叠加方式都从主题取（见 engine/lib.js 的 THEME_DEFAULT）
     const { W, H, clamp, mix, E, pr, rng, rr, text, SONG, MONO, captions, bgVibe, glowDot, dot, mixRGB, GOLD, ICE } = MJ.lib;
     const { sfx } = ctx, P = ctx.params, L = ctx.lines;
     const T = (i) => (L[i] ? L[i].t0 : 0), END = ctx.shot.dur;
@@ -37,8 +38,8 @@ MJ.scene("vibe_loss_valley", {
       const x = (px * 2 - W / 2) / (W * 0.45), y = (py * 2 - H / 2 + 40) / (H * 0.62), v = f(x, y);
       const k = clamp((v - lmin) / (lmax * 1.3 - lmin));
       const band = Math.abs(((v * 16) % 1) - 0.5) < 0.05 ? 1 : 0;                 // 等高线
-      const base = mixRGB([60, 46, 30], [10, 16, 40], Math.sqrt(k));
-      const line = mixRGB([243, 196, 107], [110, 150, 230], k);
+      const base = mixRGB(TH.rgb.terrainLow, TH.rgb.terrainHigh, Math.sqrt(k));
+      const line = mixRGB(TH.rgb.accent, TH.rgb.coldLine, k);
       const a = band * (0.55 - 0.3 * k), i = (py * W / 2 + px) * 4;
       img.data[i] = base[0] * (1 - a) + line[0] * a; img.data[i + 1] = base[1] * (1 - a) + line[1] * a; img.data[i + 2] = base[2] * (1 - a) + line[2] * a; img.data[i + 3] = 255;
     }
@@ -76,7 +77,7 @@ MJ.scene("vibe_loss_valley", {
           for (let i = 0; i < col.s.length; i++) {
             const y = y0 + i * 32; if (y < -30 || y > H + 30) continue;
             c.globalAlpha = (0.15 + 0.6 * (i / col.s.length)) * (1 - vK) * pr(u, tRain - 0.5, 0.8);
-            c.fillStyle = col.gold ? "#f3c46b" : "#d9d4c4"; c.fillText(col.s[i], col.x, y);
+            c.fillStyle = col.gold ? TH.accent : TH.dim; c.fillText(col.s[i], col.x, y);
           }
         }
         c.restore();
@@ -84,22 +85,22 @@ MJ.scene("vibe_loss_valley", {
         const ck = pr(u, tRain + 0.3, tMore + 1.6 - tRain, (x) => x * x * x);
         const n = Math.exp(mix(Math.log(P.counterFrom), Math.log(P.counterTo), ck));
         c.save(); c.globalAlpha = pr(u, tRain, 0.6) * (1 - vK);
-        rr(c, W - 620, 60, 560, 120, 18); c.fillStyle = "rgba(6,8,18,0.8)"; c.fill(); c.strokeStyle = "rgba(243,196,107,0.35)"; c.lineWidth = 2; c.stroke();
-        text(c, P.counterLabel + "（" + P.note + "）", W - 590, 104, SONG(26), "#bdb5a0");
-        text(c, fmt(n), W - 90, 160, `700 46px Georgia, serif`, "#f3c46b", "right");
+        rr(c, W - 620, 60, 560, 120, 18); c.fillStyle = `rgba(${TH.rgb.panel},0.8)`; c.fill(); c.strokeStyle = `rgba(${TH.rgb.accent},0.35)`; c.lineWidth = 2; c.stroke();
+        text(c, P.counterLabel + "（" + P.note + "）", W - 590, 104, SONG(26), TH.muted);
+        text(c, fmt(n), W - 90, 160, `700 46px Georgia, serif`, TH.accent, "right");
         c.restore();
       }
       // ---------- 误差山谷 ----------
       if (vK > 0) {
         c.save(); c.globalAlpha = vK; c.drawImage(terr, 0, 0, W, H);
         // 底部压暗给字幕
-        const g = c.createLinearGradient(0, H - 260, 0, H); g.addColorStop(0, "rgba(4,5,12,0)"); g.addColorStop(1, "rgba(4,5,12,0.92)");
+        const g = c.createLinearGradient(0, H - 260, 0, H); g.addColorStop(0, `rgba(${TH.rgb.panel},0)`); g.addColorStop(1, `rgba(${TH.rgb.panel},0.92)`);
         c.fillStyle = g; c.fillRect(0, H - 260, W, 260);
         c.restore();
         const { p, k, prog } = posAt(u);
         const ballA = pr(u, tValley + 0.6, 0.6);
         // 轨迹
-        c.save(); c.globalCompositeOperation = "lighter";
+        c.save(); c.globalCompositeOperation = TH.blend;
         for (let i = 0; i <= k; i++) { const [sx, sy] = toS(...path[i]); c.globalAlpha = ballA * 0.7; dot(c, trail, sx, sy, 1); }
         c.restore();
         // 方向箭头（第一步之前出现）
@@ -107,7 +108,7 @@ MJ.scene("vibe_loss_valley", {
         if (arA > 0) {
           const [x0, y0] = toS(...path[0]), [x1, y1] = toS(...path[4]);
           const ang = Math.atan2(y1 - y0, x1 - x0), len = 150;
-          c.save(); c.globalAlpha = arA; c.strokeStyle = "#f3c46b"; c.fillStyle = "#f3c46b"; c.lineWidth = 4; c.shadowColor = "rgba(255,190,90,0.9)"; c.shadowBlur = 12;
+          c.save(); c.globalAlpha = arA; c.strokeStyle = TH.accent; c.fillStyle = TH.accent; c.lineWidth = 4; c.shadowColor = `rgba(${TH.rgb.glow},0.9)`; c.shadowBlur = 12;
           c.beginPath(); c.moveTo(x0, y0); c.lineTo(x0 + Math.cos(ang) * len, y0 + Math.sin(ang) * len); c.stroke();
           c.beginPath(); c.moveTo(x0 + Math.cos(ang) * (len + 18), y0 + Math.sin(ang) * (len + 18));
           c.lineTo(x0 + Math.cos(ang + 2.6) * 22 + Math.cos(ang) * len, y0 + Math.sin(ang + 2.6) * 22 + Math.sin(ang) * len);
@@ -116,20 +117,20 @@ MJ.scene("vibe_loss_valley", {
         }
         // 小球（冷蓝 → 暖金）
         const [bx, by] = toS(...p);
-        c.save(); c.globalCompositeOperation = "lighter";
+        c.save(); c.globalCompositeOperation = TH.blend;
         c.globalAlpha = ballA * (1 - prog); dot(c, ballI, bx, by, 1);
         c.globalAlpha = ballA * prog; dot(c, ball, bx, by, 1);
         c.restore();
-        c.save(); c.globalAlpha = ballA; c.fillStyle = "#fff6e0"; c.beginPath(); c.arc(bx, by, 9, 0, 7); c.fill(); c.restore();
+        c.save(); c.globalAlpha = ballA; c.fillStyle = TH.highlight; c.beginPath(); c.arc(bx, by, 9, 0, 7); c.fill(); c.restore();
         // 误差曲线
         const gA = pr(u, tStep, 0.6);
         if (gA > 0) {
           const X0 = 1440, Y0 = 600, GW = 400, GH = 200;
           c.save(); c.globalAlpha = gA;
-          rr(c, X0 - 30, Y0 - 60, GW + 60, GH + 100, 16); c.fillStyle = "rgba(6,8,18,0.78)"; c.fill();
-          text(c, "误差（" + P.note + "）", X0, Y0 - 18, SONG(24), "#bdb5a0");
-          c.strokeStyle = "rgba(255,255,255,0.2)"; c.lineWidth = 1; c.beginPath(); c.moveTo(X0, Y0); c.lineTo(X0, Y0 + GH); c.lineTo(X0 + GW, Y0 + GH); c.stroke();
-          c.strokeStyle = "#f3c46b"; c.lineWidth = 3; c.shadowColor = "rgba(255,190,90,0.7)"; c.shadowBlur = 8; c.beginPath();
+          rr(c, X0 - 30, Y0 - 60, GW + 60, GH + 100, 16); c.fillStyle = `rgba(${TH.rgb.panel},0.78)`; c.fill();
+          text(c, "误差（" + P.note + "）", X0, Y0 - 18, SONG(24), TH.muted);
+          c.strokeStyle = `rgba(${TH.rgb.shine},0.2)`; c.lineWidth = 1; c.beginPath(); c.moveTo(X0, Y0); c.lineTo(X0, Y0 + GH); c.lineTo(X0 + GW, Y0 + GH); c.stroke();
+          c.strokeStyle = TH.accent; c.lineWidth = 3; c.shadowColor = `rgba(${TH.rgb.glow},0.7)`; c.shadowBlur = 8; c.beginPath();
           const lv = (l) => Y0 + GH - ((l - lmin) / (lmax - lmin)) * GH * 0.92;
           const cur = f(...p);
           for (let i = 0; i <= k; i++) { const x = X0 + (i / (path.length - 1)) * GW; i ? c.lineTo(x, lv(loss[i])) : c.moveTo(x, lv(loss[i])); }

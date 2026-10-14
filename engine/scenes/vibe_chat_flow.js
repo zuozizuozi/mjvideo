@@ -13,6 +13,7 @@ MJ.scene("vibe_chat_flow", {
     captionY: 960,
   },
   create(ctx) {
+    const TH = MJ.theme;                                 // 颜色、字体、叠加方式都从主题取（见 engine/lib.js 的 THEME_DEFAULT）
     const { W, H, clamp, mix, E, pr, rng, rr, text, MONO, SONG, captions, bgVibe, glowDot, dot, GOLD } = MJ.lib;
     const { cue, sfx } = ctx, P = ctx.params, L = ctx.lines;
     const T = (i) => (L[i] ? L[i].t0 : 0);
@@ -41,13 +42,13 @@ MJ.scene("vibe_chat_flow", {
       const panelA = pr(u, tQ - 0.3, 0.6) * (1 - flood * 0.85) * (1 - col);
       if (panelA > 0.01) {
         c.save(); c.globalAlpha = panelA;
-        rr(c, PX, PY, PW, PH, 26); c.fillStyle = "rgba(20,24,44,0.75)"; c.fill(); c.strokeStyle = "rgba(243,196,107,0.25)"; c.lineWidth = 2; c.stroke();
+        rr(c, PX, PY, PW, PH, 26); c.fillStyle = `rgba(${TH.rgb.card},0.75)`; c.fill(); c.strokeStyle = `rgba(${TH.rgb.accent},0.25)`; c.lineWidth = 2; c.stroke();
         // 提问气泡（右）
         c.font = SONG(30); const qw = c.measureText(P.question).width + 56;
         const qk = pr(u, tQ, 0.5, E.out);
         c.globalAlpha = panelA * qk;
-        rr(c, PX + PW - 40 - qw, PY + 40 + (1 - qk) * 12, qw, 64, 20); c.fillStyle = "rgba(243,196,107,0.18)"; c.fill();
-        text(c, P.question, PX + PW - 40 - qw / 2, PY + 83 + (1 - qk) * 12, SONG(30), "#f2efe6", "center");
+        rr(c, PX + PW - 40 - qw, PY + 40 + (1 - qk) * 12, qw, 64, 20); c.fillStyle = `rgba(${TH.rgb.accent},0.18)`; c.fill();
+        text(c, P.question, PX + PW - 40 - qw / 2, PY + 83 + (1 - qk) * 12, SONG(30), TH.text, "center");
         // 回答（左），逐字
         c.globalAlpha = panelA;
         let n = typedN(u), y = PY + 160;
@@ -55,10 +56,10 @@ MJ.scene("vibe_chat_flow", {
           if (n <= 0) break;
           const s = line.slice(0, n); n -= line.length;
           const code = /^(def |\s{4})/.test(line);
-          text(c, s, PX + 60, y, code ? MONO(28) : SONG(30), code ? "#8fc4ff" : "#e9e4d6");
+          text(c, s, PX + 60, y, code ? MONO(28) : SONG(30), code ? TH.cold : TH.dim);
           y += 52;
         }
-        if (u > tA && typedN(u) < total && Math.floor(u * 3) % 2 === 0) { c.fillStyle = "#f3c46b"; c.fillRect(PX + 60, y - 30, 14, 34); }
+        if (u > tA && typedN(u) < total && Math.floor(u * 3) % 2 === 0) { c.fillStyle = TH.accent; c.fillRect(PX + 60, y - 30, 14, 34); }
         c.restore();
       }
       // 文字墙：从中心往外扩散出现；倒吸时每个字飞向中心并变淡
@@ -72,7 +73,7 @@ MJ.scene("vibe_chat_flow", {
           const x = mix(g.x, W / 2, kk), yy = mix(g.y + Math.sin(u * 0.8 + g.x) * 3, H / 2, kk);
           const band = clamp(Math.abs(yy - P.captionY + 18) / 90);          // 字幕带附近的字压暗，保证字幕看得清
           c.globalAlpha = g.a * appear * (1 - kk) * (1 - pr(u, tCol - 0.2, 0.2) * 0.3) * mix(0.12, 1, band);
-          c.fillStyle = g.gold ? "#f3c46b" : "#d9d4c4";
+          c.fillStyle = g.gold ? TH.accent : TH.dim;
           c.fillText(g.ch, x, yy);
         }
         c.restore();
@@ -81,9 +82,9 @@ MJ.scene("vibe_chat_flow", {
       const cur = pr(u, tCol + 0.9, 0.5);
       if (cur > 0) {
         const blink = 0.55 + 0.45 * Math.cos((u - tCol) * 4.2);
-        c.save(); c.globalCompositeOperation = "lighter"; c.globalAlpha = cur * blink;
+        c.save(); c.globalCompositeOperation = TH.blend; c.globalAlpha = cur * blink;
         dot(c, cursorSprite, W / 2, H / 2, 1.6);
-        c.globalCompositeOperation = "source-over"; c.fillStyle = "#fff4d8"; c.fillRect(W / 2 - 7, H / 2 - 34, 14, 68);
+        c.globalCompositeOperation = "source-over"; c.fillStyle = TH.highlight; c.fillRect(W / 2 - 7, H / 2 - 34, 14, 68);
         c.restore();
       }
       captions(c, L, u, { y: P.captionY });

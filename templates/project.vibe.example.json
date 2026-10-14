@@ -1,28 +1,131 @@
 {
-  "title": "片名（Vibe 风格：无口播，字幕 + 配乐，横屏）",
-  "format": { "width": 1920, "height": 1080, "fps": 30 },
-  "voice": { "engine": "none" },
-  "timing": { "lead": 0.8, "gap": 0.45, "tail": 2.5, "pre": 0.8, "lineGap": 0.3, "cps": 6, "linePad": 0.8, "minLine": 1.7 },
-  "overlay": { "brand": null, "styleLabel": false, "subtitles": "scene", "avatar": null },
-  "music": { "enabled": true, "volume": 0.55, "bpm": 76 },
-  "mix": { "sfx_volume": 0.6, "loudness": -14 },
+  "title": "片名（无口播：字幕 + 配乐，横屏）",
+  "format": {
+    "width": 1920,
+    "height": 1080,
+    "fps": 30
+  },
+  "voice": {
+    "engine": "none"
+  },
+  "timing": {
+    "lead": 0.8,
+    "gap": 0.4,
+    "tail": 2.5,
+    "pre": 0.8,
+    "lineGap": 0.25,
+    "cps": 7,
+    "linePad": 0.65,
+    "minLine": 1.5
+  },
+  "overlay": {
+    "brand": null,
+    "styleLabel": false,
+    "subtitles": "scene",
+    "avatar": null
+  },
+  "music": {
+    "enabled": true,
+    "volume": 0.55,
+    "bpm": 76
+  },
+  "mix": {
+    "sfx_volume": 0.6,
+    "loudness": -14
+  },
   "fonts": [
-    { "family": "SongB", "src": "assets/fonts/NotoSerifSC-Bold.otf" },
-    { "family": "SongH", "src": "assets/fonts/NotoSerifSC-Black.otf" }
+    {
+      "family": "SongB",
+      "src": "assets/fonts/NotoSerifSC-Bold.otf"
+    },
+    {
+      "family": "SongH",
+      "src": "assets/fonts/NotoSerifSC-Black.otf"
+    }
   ],
-  "fontsToLoad": ["40px SongB", "40px SongH"],
+  "fontsToLoad": [
+    "40px SongB",
+    "40px SongH"
+  ],
   "transitionHalf": 0.5,
-  "transitionSfx": { "kind": "swell", "vol": 0.18 },
+  "transitionSfx": {
+    "kind": "swell",
+    "vol": 0.18
+  },
   "output_name": "成片.mp4",
   "shots": [
-    { "id": "s01", "scene": "vibe_particle_title", "music": "ambient_pad", "transition": "fade", "pre": 1.0, "hold": 0.4,
-      "lines": [ { "text": "标题大字。", "dur": 4.0 } ],
-      "params": { "blocks": [ { "line": 0, "size": 140, "y": 470, "font": "H", "color": "#f2efe6", "stay": true } ],
-                  "extras": [ { "text": "E N G L I S H   S U B", "y": 600, "size": 30, "after": 0, "delay": 1.6 } ] } },
-    { "id": "s02", "scene": "vibe_dot_grid", "music": "ambient_piano", "transition": "fade", "hold": 0.8,
-      "lines": [ { "text": "每句一行字幕，**金色**是关键词。" }, { "text": "第二句。", "hold": 0.6 } ],
-      "params": { "phase": "reveal" } },
-    { "id": "s03", "scene": "vibe_outro_note", "music": "ambient_outro", "pre": 0.8,
-      "lines": [ { "text": "片尾彩蛋小字。", "dur": 3.0 }, { "text": "麻酱 AI 实验室", "dur": 3.0 } ] }
-  ]
+    {
+      "id": "s01",
+      "scene": "vibe_particle_title",
+      "music": "ambient_pad",
+      "transition": "fade",
+      "pre": 1.0,
+      "hold": 0.4,
+      "lines": [
+        {
+          "text": "标题大字。",
+          "dur": 4.0
+        }
+      ],
+      "params": {
+        "blocks": [
+          {
+            "line": 0,
+            "size": 140,
+            "y": 470,
+            "font": "H",
+            "color": "#f2efe6",
+            "stay": true
+          }
+        ],
+        "extras": [
+          {
+            "text": "E N G L I S H   S U B",
+            "y": 600,
+            "size": 30,
+            "after": 0,
+            "delay": 1.6
+          }
+        ]
+      }
+    },
+    {
+      "id": "s02",
+      "scene": "vibe_dot_grid",
+      "music": "ambient_piano",
+      "transition": "fade",
+      "hold": 0.8,
+      "lines": [
+        {
+          "text": "每句一行字幕，**金色**是关键词。"
+        },
+        {
+          "text": "第二句。",
+          "hold": 0.6
+        }
+      ],
+      "params": {
+        "phase": "reveal"
+      }
+    },
+    {
+      "id": "s03",
+      "scene": "vibe_outro_note",
+      "music": "ambient_outro",
+      "pre": 0.8,
+      "lines": [
+        {
+          "text": "片尾彩蛋小字。",
+          "dur": 3.0
+        },
+        {
+          "text": "麻酱 AI 实验室",
+          "dur": 3.0
+        }
+      ]
+    }
+  ],
+  "design": "先按 prompts/art_director.md 做美术方案，写进项目的 design.md，再把 theme 填在下面（或 new --style=风格包 起步）",
+  "theme": {},
+  "images": {}
 }

@@ -11,6 +11,7 @@ MJ.scene("vibe_dot_grid", {
   design: [1920, 1080],
   params: { phase: "reveal", spacing: 26, garbage: "锟斤拷烫烫烫屯屯屯ψЖ※≠∵¿Ω§ゑ囧", captionY: 960 },
   create(ctx) {
+    const TH = MJ.theme;                                 // 颜色、字体、叠加方式都从主题取（见 engine/lib.js 的 THEME_DEFAULT）
     const { W, H, clamp, mix, E, pr, rng, rr, text, SONG, MONO, captions, bgVibe, glowDot, dot, mixRGB, GOLD, ICE, PAPER } = MJ.lib;
     const { sfx } = ctx, P = ctx.params, L = ctx.lines, PH = P.phase;
     const T = (i) => (L[i] ? L[i].t0 : 0), END = ctx.shot.dur;
@@ -43,7 +44,7 @@ MJ.scene("vibe_dot_grid", {
 
     const knob = (c, u, a) => {
       const cx = W / 2, cy = H / 2 - 30, r = 170;
-      c.save(); c.globalAlpha = a; c.strokeStyle = "#f3c46b"; c.shadowColor = "rgba(255,190,90,0.8)"; c.shadowBlur = 18;
+      c.save(); c.globalAlpha = a; c.strokeStyle = TH.accent; c.shadowColor = `rgba(${TH.rgb.glow},0.8)`; c.shadowBlur = 18;
       c.lineWidth = 4; c.beginPath(); c.arc(cx, cy, r, 0, 7); c.stroke();
       c.lineWidth = 2; c.globalAlpha = a * 0.5; c.beginPath(); c.arc(cx, cy, r * 0.72, 0, 7); c.stroke();
       c.globalAlpha = a;
@@ -53,9 +54,9 @@ MJ.scene("vibe_dot_grid", {
         c.beginPath(); c.moveTo(cx + Math.cos(ang) * (r + 14), cy + Math.sin(ang) * (r + 14)); c.lineTo(cx + Math.cos(ang) * (r + (long ? 40 : 26)), cy + Math.sin(ang) * (r + (long ? 40 : 26))); c.stroke();
       }
       const ang = -Math.PI / 2 + 0.55 * Math.sin((u - T(3)) * 1.1) - 0.3;
-      c.lineWidth = 6; c.lineCap = "round"; c.strokeStyle = "#fff1cc";
+      c.lineWidth = 6; c.lineCap = "round"; c.strokeStyle = TH.highlight;
       c.beginPath(); c.moveTo(cx, cy); c.lineTo(cx + Math.cos(ang) * r * 0.62, cy + Math.sin(ang) * r * 0.62); c.stroke();
-      c.fillStyle = "#fff1cc"; c.beginPath(); c.arc(cx, cy, 10, 0, 7); c.fill();
+      c.fillStyle = TH.highlight; c.beginPath(); c.arc(cx, cy, 10, 0, 7); c.fill();
       c.restore();
     };
 
@@ -68,12 +69,12 @@ MJ.scene("vibe_dot_grid", {
       const knobA = PH === "reveal" ? pr(u, T(3) + 1.0, 0.7, E.inOut) : 0;
       // 连线（dim）
       if (PH === "dim") {
-        c.save(); c.globalAlpha = 0.18 * gA; c.strokeStyle = "#f3c46b"; c.lineWidth = 1;
+        c.save(); c.globalAlpha = 0.18 * gA; c.strokeStyle = TH.accent; c.lineWidth = 1;
         c.beginPath();
         for (const [a, bx, by] of links) { c.moveTo(W / 2 + (a.x - W / 2) * s, H / 2 + (a.y - H / 2) * s); c.lineTo(W / 2 + (bx - W / 2) * s, H / 2 + (by - H / 2) * s); }
         c.stroke(); c.restore();
       }
-      c.save(); c.globalCompositeOperation = "lighter";
+      c.save(); c.globalCompositeOperation = TH.blend;
       const big = s > 6, scaleSp = r / 2.2;
       for (const d of dots) {
         const x = W / 2 + (d.x - W / 2) * s, y = H / 2 + (d.y - H / 2) * s;
@@ -92,12 +93,12 @@ MJ.scene("vibe_dot_grid", {
         const k = pr(u, T(1) - 0.2, 0.5);
         if (k > 0) {
           c.save(); c.globalAlpha = k;
-          rr(c, 360, 690, 1200, 120, 18); c.fillStyle = "rgba(8,12,26,0.82)"; c.fill(); c.strokeStyle = "rgba(120,180,255,0.35)"; c.lineWidth = 2; c.stroke();
-          text(c, "输出", 400, 765, SONG(30), "#8fb8ff");
+          rr(c, 360, 690, 1200, 120, 18); c.fillStyle = `rgba(${TH.rgb.panel},0.82)`; c.fill(); c.strokeStyle = `rgba(${TH.rgb.coldDot},0.35)`; c.lineWidth = 2; c.stroke();
+          text(c, "输出", 400, 765, SONG(30), TH.cold);
           const n = Math.min(22, Math.floor((u - T(1) + 0.2) * 9));
           let str = ""; for (let i = 0; i < n; i++) str += P.garbage[Math.floor(hash(i * 7 + 3, Math.floor(u * 7) + i) * P.garbage.length)];
           const jx = (hash(5, Math.floor(u * 15)) - 0.5) * 6;
-          text(c, str, 500 + jx, 768, MONO(44), "#cfe2ff");
+          text(c, str, 500 + jx, 768, MONO(44), TH.cold);
           c.restore();
         }
       }

@@ -13,6 +13,12 @@ description: 用纯代码（Canvas/HTML + 无头 Chrome 逐帧渲染 + FFmpeg）
 
 ---
 
+## 原则：手册给技术，不给答案
+
+- **硬规则**（违反会出错或出事故，必须遵守）：画面可复现（第 2 节）、安全区、示意内容要标注、账号内容规范（第 10 节）、`validate` 不能有 FAIL、改引擎必须跑回归。
+- **其余都是你的创作空间**：画面比喻、构图、配色、字体、动效、镜头运动、转场、字幕样式、配乐起伏，按这条视频的内容自由发挥。场景库、风格包、以往的案例都是**零件和参考**，不是模板。
+- 每条视频都要有自己的美术方案（第 12 节），和以往的视频要看得出区别。
+
 ## 0. 开工前检查（每次新会话都做）
 
 ```bash
@@ -32,7 +38,7 @@ Chrome 默认路径 `C:/Program Files/Google/Chrome/Application/chrome.exe`，�
 
 ```
 主题/讲稿 → [1] 编导：写 project.json（讲稿 + 分镜）
-          → [2] 选场景：复用 / 改参数 / 改代码 / 新写
+          → [2] 美术方案：design.md + theme（第 12 节），用户确认；然后按方案写 / 改场景
           → [3] node bin/mjv.mjs tts + timeline
           → [4] node bin/mjv.mjs check + stills（抽帧自查，修到满意）
           → [5] node bin/mjv.mjs render（增量）
@@ -56,18 +62,21 @@ node bin/mjv.mjs new projects/<项目名>      # 生成 project.json 模板和�
 5. **每个镜头写清楚“画面要证明什么”**：写在 shot 的 `note` 字段，这是给第 2 步看的。
 6. 时长：1–3 分钟的片子一般 8–15 个镜头。只验证一个知识点时 1 个镜头也可以。
 
-### [2] 为每个镜头选场景
+### [2] 美术方案，然后写画面
 
+**先定这条视频长什么样，再决定每个镜头用什么画面。** 按第 12 节出 2–3 个差别明显的方案（有参考素材先 `mjv ref`，见第 13 节），用户选定后写进项目的 `design.md` 和 project.json 的 `theme`。
+
+然后按方案给每个镜头定画面：
 ```bash
-node bin/mjv.mjs scenes projects/<项目名>    # 列出场景库 + 项目自带场景，带用途说明和 cues 参数
+node bin/mjv.mjs scenes projects/<项目名>    # 场景库 = 零件库，看看有没有能用的技术
 ```
-按这个顺序决策，**不要为了省事硬套不合适的场景**：
 
 | 情况 | 做法 |
 |---|---|
-| 库里有场景正好能演这个知识点 | 直接用，在 `params.cues` 里把动作词换成本段口播里的词（也可以写秒数） |
-| 库里有场景视觉合适，但文字、颜色、数量不对 | 复制到 `projects/<项目名>/scenes/<新名字>.js` 改，不要改库里的原文件 |
-| 知识点有自己的“样子”，库里没有（分子链、活塞、轨道、电路……） | 新写场景，见第 2 节。用数学/物理关系直接驱动动画，不要摆关键帧 |
+| 这个镜头的比喻需要新画面 | **新写场景**（第 2 节），这是常态。用数学 / 物理关系驱动，不要摆关键帧 |
+| 库里有场景的技术能用（粒子聚字、概率条……） | 复制到 `projects/<项目名>/scenes/<新名字>.js`，按美术方案改构图、出场方式、细节；不要改库里的原文件 |
+| 库里有场景原样就合适 | 可以直接用，改 `params`。但**原样复用的镜头不超过全片三成** |
+| 需要真实图片（书封、产品、人物、截图） | 用 `image_reveal` 或在场景里 `image()`（第 14 节） |
 
 判断标准：**观众看画面能不能不听口播也大致看懂这个关系或变化**。讲关系就画出关系，讲变化就让它变给你看。
 
@@ -167,6 +176,7 @@ MJ.scene("piston", {
 6. **性能**：每帧绘制最好 < 50ms。大量静态内容（纸纹、噪点、文字采样）在 create 里画到离屏画布 `canvas(w, h)`，draw 里只 `drawImage`。
 7. **布局安全区（竖屏 1080×1920）**：顶部 0–160 是品牌和风格标签；字幕在 y≈1450–1545；左下角头像在 x<200、y>1580；y>1650 会被平台按钮和文案挡住。关键信息放在 y 180–1420。
 8. `u` 在转场时会略超出 [0, 时长]，动画要能处理（`pr` 已经做了 clamp）。
+9. **颜色和字体从主题取**（`const TH = MJ.theme;`，第 15 节），不要写死。这样同一个场景换个主题就是另一种长相，以后能复用。
 
 **可用工具（`MJ.lib`）**：`pr(u, 起点, 时长, 缓动)` 0→1 进度；`E.out / E.inOut / E.back / E.elastic / E.lin`；`mix(a,b,k)`；`clamp`；`rng(seed)`；`rr(c,x,y,w,h,r)` 圆角矩形路径；`text(c,字,x,y,字体,颜色,对齐)`；`typed(字符串,u,起点,每秒字数)` 打字机；字体 `HEAVY(n)` 粗黑标题、`YH(n)` 雅黑、`MONO(n)` 等宽、`KAI(n)` 楷体、`SERIF(n)` 衬线。
 **音效类型**：pop blip ding thud pow stamp whoosh rise zap pluck click type tick page glitch error。
@@ -269,6 +279,8 @@ MJ.scene("piston", {
 
 ## 9. 场景的积累和复用
 
+场景库是**零件库**：攒的是技术（粒子、连线、图表、物理模拟），不是成片的样子。收进库的场景要能换主题、换参数讲别的题。
+
 - 新写的场景先放在 `projects/<项目>/scenes/`，成片满意后再考虑收进库。
 - 收进库（`promote`）的条件：
   1. 有 `title` 和 `desc`（desc 写清“画什么 + 适合讲什么知识点”，`scenes` 命令靠它让下一个 Agent 找到）；
@@ -285,68 +297,124 @@ MJ.scene("piston", {
 - 配音应使用本人音色（目前本机没有克隆环境，暂用晓伊，交付时必须说明是占位）。
 - 字体授权：标题字体 HYYakuHei、正文微软雅黑商用需要授权，发布前确认或换成思源黑体等可商用字体（`fonts` 字段可改）。
 
-## 11. 无口播 Vibe 风格（字幕 + 配乐，横屏）
+## 11. 无口播形式（字幕 + 配乐，横屏）
 
-参考抖音"Vibe知识大赏"：没有配音，只有逐句淡入的居中字幕、慢节奏氛围配乐和柔和音效；深蓝黑底、暖金色光点。
-第一条实战：`projects/ep09_llm`（《它只会猜下一个字，为什么看起来像在思考？》，3 分钟，15 个镜头）。新项目从 `templates/project.vibe.example.json` 起步。
+"无口播"是一种**形式**：没有配音，靠逐句出现的字幕、画面和配乐推进。它**不规定长相**。底色、字体、配色、动效、构图每条视频自己定（见第 12 节）。
+第一条实战是 EP09，做法记录在 `docs/案例_EP09.md`，**那是一个案例，不是模板，不要照抄它的配色、场景顺序和配乐曲线**。
 
-**什么时候用**：观众静音也能看懂的知识类短片；文案有诗意、靠字幕节奏推进；画面以粒子、光点、图解为主。
+新建：`node bin/mjv.mjs new projects/<名字> --vibe`（或 `--style=<风格包>`，见第 12 节）。
 
 ### 配置要点
 ```jsonc
 "format": { "width": 1920, "height": 1080, "fps": 30 },
 "voice": { "engine": "none" },                       // 无口播：tts 自动跳过，时间轴按阅读时间排
-"timing": { "lead": 0.8, "gap": 0.45, "tail": 2.5, "pre": 0.8, "lineGap": 0.3, "cps": 6, "linePad": 0.8, "minLine": 1.7 },
+"timing": { "lead": 0.8, "gap": 0.4, "tail": 2.5, "pre": 0.8, "lineGap": 0.25, "cps": 7, "linePad": 0.65, "minLine": 1.5 },
 "overlay": { "brand": null, "styleLabel": false, "subtitles": "scene", "avatar": null },   // 字幕交给场景画
-"music": { "enabled": true, "volume": 0.55, "bpm": 76 },
-"mix": { "sfx_volume": 0.6, "loudness": -14 },
-"fonts": [ { "family": "SongB", "src": "assets/fonts/NotoSerifSC-Bold.otf" }, { "family": "SongH", "src": "assets/fonts/NotoSerifSC-Black.otf" } ],
-"fontsToLoad": ["40px SongB", "40px SongH"],
-"transitionHalf": 0.5, "transitionSfx": { "kind": "swell", "vol": 0.18 }
+"theme": { ... },                                    // 这条视频的长相（第 12、15 节）
+"images": { "book": "assets/book.png" },             // 用到的图片（第 14 节）
+"transitionSfx": { "kind": "swell", "vol": 0.18 }
 ```
-- 字体：思源宋体 Bold / Black（开源、可商用），在引擎 `assets/fonts/`。`fonts.src` 可以写相对项目目录或引擎目录的路径。
-- 每个镜头用 `lines` 写字幕，不写 `text`：
-  ```jsonc
-  { "id": "s05", "scene": "vibe_dot_grid", "music": "ambient_full", "transition": "fade", "hold": 0.8,
-    "lines": [ { "text": "我们叫它——**参数**。" }, { "text": "每一个，都像一个小小的**旋钮**。", "hold": 1.0 } ],
-    "params": { "phase": "reveal" } }
-  ```
-  `**词**` 金色高亮；`dur` 手动指定这句停留秒数；`hold` 在自动时长上多留；镜头的 `pre` 是第一句出现前画面先走几秒、`hold` 是最后一句后多留几秒。
-  自动时长 = `max(minLine, 有效字数 / cps + linePad)`。`timeline` 命令会打印每个镜头的起止和总时长，先看总时长再调 `cps`。
-- `cue("词")` 照常可用（词的时间 = 这句出现时刻 + 按位置快速阅读的偏移）。但 Vibe 场景更推荐直接用 `ctx.lines[i].t0` 对齐：第几句出现，画面就做第几件事。
+- 每个镜头用 `lines` 写字幕：`{ "text": "可它其实，只会做**一件事**。", "dur": 3.2, "hold": 0.4 }`。`**词**` 高亮（颜色来自主题的 accent）；`dur` 手动指定停留秒数；`hold` 多留。镜头的 `pre` 是第一句前画面先走几秒、`hold` 是最后一句后多留。
+- 自动时长 = `max(minLine, 有效字数 / cps + linePad)`。`timeline` 会打印每个镜头的起止和总时长，先看总时长再调 `cps`。
+- `cue("词")` 照常可用；也可以直接用 `ctx.lines[i].t0` 对齐：第几句出现，画面就做第几件事。
 
 ### 场景里怎么画字幕
-- `ctx.lines`：本镜头每句 `{ text（带 ** 标记）, plain, t0, t1 }`，时间是镜头内秒数。
-- `MJ.lib.captions(c, ctx.lines, u, { y, size, skip: [句号], mode: "replace" | "stack", per: { 序号: {覆盖参数} } })`：
-  replace 同一位置依次替换、最后一句留到镜头结束；stack 依次往下排、旧句变暗。`skip` 掉场景自己用大字画的句子。
-- `MJ.lib.caption(c, line, u, opts)` 画单句；`lineAlpha(line, u, opts)` 只算透明度。超宽会自动缩字号，但 `check` 按 54px 不缩的宽度报超宽。
-- 字幕默认位置 y≈960（横屏），关键画面放在 y 120–880。
+- `ctx.lines`：本镜头每句 `{ text（带 ** 标记）, plain, t0, t1 }`，镜头内秒数。
+- `MJ.lib.captions(c, ctx.lines, u, { y, x, size, align, font, color, skip: [句号], mode: "replace" | "stack", per: { 序号: {...} } })`；`caption()` 画单句；`lineAlpha()` 只算透明度。
+- **字幕也是设计的一部分**：位置、字号、字体、出现方式（淡入、打字、逐字弹出、贴着画面元素走、手写描边……）按美术方案来，不必每条都居中淡入。`caption` 不够用就在场景里自己画。
 
-### Vibe 工具（`MJ.lib`）
-`bgVibe(c, u, opts)` 深蓝黑径向渐变 + 漂浮微尘；`glowDot([r,g,b], 半径)` 预渲染发光点精灵，配 `dot(c, 精灵, x, y, 缩放)` 和 `globalCompositeOperation = "lighter"`（比 shadowBlur 快得多）；
-`textPoints(字, 字体, cx, cy, 间距)` / `samplePoints(paint, w, h, 间距)` 把文字或图形采样成粒子目标点；`mixRGB`、`GOLD`、`ICE`、`PAPER` 配色；`SONG(n)` / `SONGH(n)` 粗宋。
+### 工具（`MJ.lib`）
+`bgVibe(c, u, opts)` 主题背景（渐变 + 纹理 + 微尘）；`glowDot([r,g,b], 半径)` + `dot()` 发光点精灵（用 `MJ.theme.blend` 叠加）；`textPoints()` / `samplePoints()` / `imagePoints()` 把文字、图形、图片采样成粒子；`image()` / `drawImageFit()` 图片；`mixRGB`；`SONG(n)` / `SONGH(n)` 主题的正文 / 标题字体。
 
-> **注意：字体在 `create` 运行时还没加载完。** 凡是要量文字宽度、把文字采样成点的，放到第一次绘制时再做（`let lay = null; ... if (!lay) lay = layout(c);`），否则会用错字体。
+> **字体和图片在 `create` 运行时还没加载完。** 凡是要量文字宽度、把文字或图片采样成点的，放到第一次绘制时再做（`let lay = null; ... if (!lay) lay = layout(c);`）。
 
 ### 配乐和音效
-- 配乐预设（镜头 `music` 字段）：`ambient_pad`（只有铺底）→ `ambient_piano`（加钢琴）→ `ambient_full`（加低音和轻鼓）→ `ambient_arp`（琶音）→ `ambient_lift`（高潮：全部织体 + 高八度 + 旋律 + 更重的鼓）→ `ambient_outro`（收尾）。
-- **起伏要靠 `energy` 做出来**（用户反馈过"全篇都差不多、高潮不明显"）：镜头写 `"energy": 0.3–1.0`（整体音量），`"energyTo"` 让音量在镜头内渐变。EP09 的曲线：开头 0.85 → 疑问处掉到 0.25 → 训练段 lift 0.7→1.0（第一次高潮）→ "它真的懂吗"掉到 0.3（低谷）→ 0.55→0.85 铺垫 → 金句 lift 1.0（最高潮）→ 收尾 0.3。高潮和低谷要差 8–10 LU 才听得出来。
-- 检查起伏：`ffmpeg -i build/mix.wav -af "ebur128=metadata=1,ametadata=print:key=lavfi.r128.M:file=m.txt" -f null -`，按镜头算平均响度。**注意 ametadata 的 file 是追加写入，测之前先删掉旧文件**。
-- 柔和音效：`chime`（光点、关键词）`swell`（大字聚合、转场）`glow`（重要画面出现）`shimmer`（粒子散开 / 聚拢）`tick`（轻节拍）。不要用 glitch / error / pow。
-- 无口播时混音不做人声闪避，也不用动态 loudnorm（它会把起伏压平）：先混好测整体响度，再整体线性增益到 −14 LUFS，最后限幅到约 −1.5 dBFS。
+- 配乐预设（镜头 `music`）：`ambient_pad`（铺底）`ambient_piano`（钢琴）`ambient_full`（低音 + 轻鼓）`ambient_arp`（琶音）`ambient_lift`（高潮：全部织体 + 旋律）`ambient_outro`（收尾）。
+- **起伏要靠 `energy` 做出来**：镜头写 `"energy": 0.3–1.0`，`"energyTo"` 让音量在镜头内渐变。高潮和低谷要差 8–10 LU 才听得出来。曲线跟着这条视频的情绪走，不要照搬别的视频。
+- 检查起伏：`ffmpeg -i build/mix.wav -af "ebur128=metadata=1,ametadata=print:key=lavfi.r128.M:file=m.txt" -f null -`，按镜头算平均响度（file 是追加写入，测之前先删旧文件）。
+- 柔和音效：`chime` `swell` `glow` `shimmer` `tick`；也可以用第 2 节列的其他音效。混音不做人声闪避，线性增益到 −14 LUFS 再限幅。
 
-### Vibe 场景库（`node bin/mjv.mjs scenes` 可查参数）
+### 场景库里的无口播零件（颜色跟随主题）
 | 场景 | 演什么 | 关键参数 |
 |---|---|---|
 | `vibe_chat_flow` | 对话框提问 → 回答流出 → 文字铺满屏 → 倒吸成光标 | question, answer, cues.cCollapse |
-| `vibe_particle_title` | 粒子聚成大字标题 / 金句 | blocks（哪几句画成大字）, extras（英文小字）, cursorUntil, from: random/figure |
+| `vibe_particle_title` | 粒子聚成大字标题 / 金句 | blocks, extras, cursorUntil, from |
 | `vibe_prob_bars` | 半句话 + 候选词概率条，一轮轮续写 | prompt, rounds, more |
-| `vibe_dot_grid` | 参数光点阵：question / reveal（拉远成星海再推近成旋钮）/ chaos（冷蓝乱闪 + 乱码）/ dim | phase |
+| `vibe_dot_grid` | 光点阵：question / reveal / chaos / dim | phase |
 | `vibe_neural_net` | 分层网络，信号逐层流过，输出概率 | input, layers, outputs |
 | `vibe_loss_valley` | 文字雨 + 计数器 → 误差地形上的真实梯度下降 | snippets, counterTo, lr, steps |
 | `vibe_embedding_stars` | 词语星星从乱飘到聚团，平行向量类比 | groups, analogy, focus |
 | `vibe_attention_lines` | 一个词向其他词连权重弧线，最后全句成网 | tokens, query, weights |
 | `vibe_particle_figure` | 光点汇聚成人形 / 人形里神经元连线点亮 | phase: converge / neurons |
-| `vibe_outro_note` | 片尾彩蛋小字 + 金色账号名 | （无） |
+| `vibe_outro_note` | 片尾小字 + 呼吸光点 | （无） |
+| `image_reveal` | 一张图片的出场、推拉、调色、碎裂（第 14 节） | image, layout, reveal, exit, tint, move |
 
-示意数据（概率、权重、计数器、误差曲线）场景里都自带"示意"标注，参数 `note` 可以改文字。
+**这些是零件，不是答案。** 原样复用的镜头不超过全片三成；复用时至少换掉构图、出场方式或比喻中的一样。
+
+---
+
+## 12. 风格与美术方案（每条视频都要做）
+
+### 三种起点，任选
+1. **选一个风格包**：`node bin/mjv.mjs styles` 查看。`new --style=<名>` 会把风格包的主题写进 project.json，**之后随便改**。现有：`dark-gold` 暗金星尘、`paper` 纸本手绘、`neon` 霓虹终端、`swiss` 极简瑞士。
+2. **从参考素材提炼**：用户给了参考图 / 参考视频，先 `mjv ref`（第 13 节），看拼图和色板，提炼出这条视频自己的风格。
+3. **完全自由创作**：话题本身有强烈的视觉联想（比如讲"记忆"可以用胶片和褪色照片，讲"算力"可以用工厂和流水线），就自己定。
+
+### 美术方案（写进项目的 `design.md`，用户确认后再写场景）
+按 `prompts/art_director.md` 出方案。先给用户 **2–3 个差别很大的方案**，每个写清：
+- **视觉概念**：一句话，这条视频"看起来像什么"（不是"深色背景加光点"这种描述，而是"像在翻一本被水泡过的旧笔记本"）。
+- **配色和字体**：具体的 theme 值（第 15 节）。
+- **质感**：纹理、光、颗粒、线条的性格。
+- **动效语言**：东西怎么出现、怎么动、怎么离开（弹、滑、生长、溶解、翻页、打字……），整片统一。
+- **镜头和转场**：镜头怎么推拉，镜头之间怎么接（硬切、溶解、一个元素变成下一个镜头的元素……）。
+- **招牌镜头**：全片最想让人记住的那一个画面。
+- **每个镜头的画面比喻**：一句话。
+
+### 防重复检查（方案定稿前必须做）
+读 `projects/*/design.md` 和 `docs/案例_*.md`，新方案和以往每一期相比，**至少在这四项里有三项不同**：视觉概念、主配色、动效语言、招牌镜头的手法。同一个账号连着发，观众会一眼认出"又是那个模板"。
+
+---
+
+## 13. 参考素材（参考图、参考视频）
+
+```bash
+node bin/mjv.mjs ref projects/<项目> <图或视频或文件夹…>     # MCP：mjv_ref
+```
+复制到 `<项目>/refs/`，生成：视频的 24 帧时间拼图、主色和强调色色板、镜头切换次数和平均镜头时长、画面运动量；汇总在 `refs/ref_report.md`。
+
+用法：
+- **参考视频看节奏和动效**：镜头多长、怎么切、东西怎么动、字幕怎么出现。
+- **参考图看质感**：配色、构图、插画风格、纹理。
+- 读完写进 `design.md`："从参考里取了什么、刻意不取什么"。**提炼，不照抄**：不复制参考的具体画面和文案。
+- 手机录屏先裁掉手机界面再分析，否则色板会被黑边和界面占满。
+
+---
+
+## 14. 图片素材
+
+```jsonc
+"images": { "book": "assets/book.png", "lab": "assets/lab.jpg" }     // 相对项目目录
+```
+- 场景里 `MJ.lib.image("book")` 拿到 `<img>`（渲染前已经全部加载完；加载失败会报错）。`drawImageFit(c, img, x, y, w, h, "cover", 缩放, 偏移x, 偏移y)`；`imagePoints(img, ...)` 采样成带颜色的点。
+- 通用场景 `image_reveal`：出场 `fade / wipe / circle / particles / blur`，退场 `shatter / fade`，调色 `duotone / mono / warm / cold`（跟随主题），版式 `full / card / left / right`，`move` 缓慢推拉摇移。
+- 图片来源：AI 生图、截图、可商用图库、用户提供。**AI 生成的、示意的要标注**（`label` 参数）。不要用来历不明、有版权风险的图。
+- 图片也要服从美术方案：用 `tint` 或在场景里统一调色，别让一张写实照片在手绘风格里显得突兀。
+
+---
+
+## 15. 主题（写场景时颜色和字体从这里取）
+
+project.json 的 `theme`（风格包会写好一份，可以改）。场景里 `const TH = MJ.theme;`，**不要写死颜色**：
+
+| 字段 | 用途 | 场景里怎么用 |
+|---|---|---|
+| `mode` | `dark` / `light` | `TH.blend`：发光叠加方式（浅底上自动改成普通叠加） |
+| `bg.center` `bg.edge` `texture` `vignette` `dust` | 背景渐变、纹理（none / paper / scanline / grid / halftone）、暗角、微尘 | `bgVibe(c, u)` 自动用 |
+| `text` `dim` `muted` `highlight` | 正文、次要文字、标注、最亮的点缀 | `TH.text`，带透明度用 `` `rgba(${TH.rgb.text},0.5)` `` |
+| `accent` `glow` `halo` | 强调色（高亮词、主角）、发光色、柔光 | `TH.accent`、`TH.rgb.accent`（数组，给 glowDot） |
+| `cold` `coldDot` `coldLine` `warn` | 冷色（混乱、错误、对比）、警示色 | 同上 |
+| `panel` `card` `panelSolid` `bar` | 面板、卡片、实心底、进度条底色 | 同上 |
+| `fonts.title` `fonts.body` `fonts.titleWeight` `fonts.bodyWeight` | 标题和正文字体（CSS 字体串） | `SONGH(n)`、`SONG(n)` |
+| `glowScale` `textGlow` `hiGlow` | 发光强度（浅色风格调小） | `glowText` / `caption` 自动用 |
+
+新场景如果需要额外的颜色，**加到主题里**（在 project.json 的 theme 写新字段，场景里 `TH.myColor || 默认值`），不要写死在代码里。新风格包放 `styles/<名>/style.json`（照现有的写），攒到十几二十个就够一个工作室用。
