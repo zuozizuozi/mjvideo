@@ -12,8 +12,8 @@ ap = argparse.ArgumentParser()
 ap.add_argument("--config", required=True); ap.add_argument("--jobs", required=True)
 a = ap.parse_args()
 C = json.load(open(a.config, encoding="utf8")); jobs = json.load(open(a.jobs, encoding="utf8"))
-if C.get("hf_home"): os.environ.setdefault("HF_HOME", C["hf_home"])
-if C.get("hf_endpoint"): os.environ.setdefault("HF_ENDPOINT", C["hf_endpoint"])
+if C.get("hf_home"): os.environ["HF_HOME"] = C["hf_home"]          # 配置优先（有的电脑全局设了 HF_HOME）
+if C.get("hf_endpoint"): os.environ["HF_ENDPOINT"] = C["hf_endpoint"]
 
 import torch, soundfile as sf
 from qwen_tts import Qwen3TTSModel
@@ -26,7 +26,14 @@ try:
     kw["attn_implementation"] = "flash_attention_2"
 except Exception:
     pass
-model = Qwen3TTSModel.from_pretrained(C.get("model", "Qwen/Qwen3-TTS-12Hz-0.6B-Base"), **kw)
+# 用本地已下载的模型目录加载，合成时完全不联网（有的电脑设了 HF_HUB_OFFLINE=1，qwen-tts 按名字加载时还会去查网）
+name = C.get("model", "Qwen/Qwen3-TTS-12Hz-0.6B-Base")
+try:
+    from huggingface_hub import snapshot_download
+    src = snapshot_download(name, local_files_only=True)
+except Exception:
+    os.environ["HF_HUB_OFFLINE"] = "0"; src = name            # 本地没有就联网下载（第一次）
+model = Qwen3TTSModel.from_pretrained(src, **kw)
 print(json.dumps({"stage": "loaded", "device": dev, "secs": round(time.time() - t0, 1)}), flush=True)
 
 ref_text = (C.get("ref_text") or "").strip()

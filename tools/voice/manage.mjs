@@ -14,7 +14,7 @@ const HOME = path.join(os.homedir(), ".mjvideo"), CFG = process.env.MJV_VOICE_CO
 const MODEL = "Qwen/Qwen3-TTS-12Hz-0.6B-Base";
 const read = () => (fs.existsSync(CFG) ? JSON.parse(fs.readFileSync(CFG, "utf8")) : {});
 const write = (c) => { fs.mkdirSync(path.dirname(CFG), { recursive: true }); fs.writeFileSync(CFG, JSON.stringify(c, null, 2)); };
-const sh = (cmd, args, env = {}, opt = {}) => { console.log("  $ " + [cmd, ...args].join(" ").slice(0, 160)); const r = spawnSync(cmd, args, { stdio: opt.capture ? "pipe" : "inherit", encoding: "utf8", env: { ...process.env, ...env } }); if (r.status !== 0 && !opt.ok) throw new Error(`${cmd} 失败（退出码 ${r.status}）${opt.capture ? "\n" + (r.stderr || "").slice(-800) : ""}`); return r; };
+const sh = (cmd, args, env = {}, opt = {}) => { console.log("  $ " + [cmd, ...args].join(" ").slice(0, 160)); const r = spawnSync(cmd, args, { stdio: opt.capture ? "pipe" : "inherit", encoding: "utf8", env: { ...process.env, PYTHONIOENCODING: "utf-8", PYTHONUTF8: "1", ...env } }); if (r.status !== 0 && !opt.ok) throw new Error(`${cmd} 失败（退出码 ${r.status}）${opt.capture ? "\n" + (r.stderr || "").slice(-800) : ""}`); return r; };
 
 export async function voice(ROOT, sub, flags) {
   const PY = process.env.MJV_PYTHON || (process.platform === "win32" ? "python" : "python3");
@@ -29,13 +29,20 @@ export async function voice(ROOT, sub, flags) {
     if (!fs.existsSync(vpy)) sh(PY, ["-m", "uv", "venv", "--python", "3.12", venv], env);
     const gpu = !flags.cpu && spawnSync("nvidia-smi", [], { stdio: "ignore" }).status === 0;
     console.log(gpu ? "检测到 NVIDIA 显卡：装 CUDA 12.8 版 PyTorch" : "⚠ 没有 NVIDIA 显卡：装 CPU 版，合成会很慢（几十秒一句）");
-    sh(PY, ["-m", "uv", "pip", "install", "--python", vpy, "torch", "torchaudio", ...(gpu ? ["--index-url", "https://download.pytorch.org/whl/cu128"] : [])], env);
-    sh(PY, ["-m", "uv", "pip", "install", "--python", vpy, "-U", "qwen-tts", "soundfile", "faster-whisper"], env);
-    const hf = path.join(dir, "hf"), dl = `from huggingface_hub import snapshot_download; snapshot_download("${MODEL}")`;
+    // 顺序很重要：先装 qwen-tts 等依赖，最后再装显卡版 PyTorch 并强制替换。
+    // 反过来装（或者用 -U 升级全部）会被 PyPI 上更新的 CPU 版 PyTorch 顶掉，显卡就用不上了。
+    sh(PY, ["-m", "uv", "pip", "install", "--python", vpy, "qwen-tts", "soundfile", "faster-whisper"], env);
+    sh(PY, ["-m", "uv", "pip", "install", "--python", vpy, "torch", "torchaudio", "--reinstall-package", "torch", "--reinstall-package", "torchaudio",
+      ...(gpu ? ["--index-url", "https://download.pytorch.org/whl/cu128"] : ["--index-url", "https://download.pytorch.org/whl/cpu"])], env);
+    const chk = sh(vpy, ["-c", "import torch,torchaudio;print(torch.__version__, torch.cuda.is_available())"], {}, { capture: true });
+    console.log("  PyTorch：" + chk.stdout.trim());
+    if (gpu && !/True/.test(chk.stdout)) throw new Error("PyTorch 装成了 CPU 版或显卡驱动太旧：更新 NVIDIA 驱动后重跑 voice install");
+    // 有的电脑设了 HF_HUB_OFFLINE=1（禁止联网下载模型），这里下载时临时关掉
+    const hf = path.join(dir, "hf"), dl = `from huggingface_hub import snapshot_download; snapshot_download("${MODEL}")`, online = { HF_HUB_OFFLINE: "0", TRANSFORMERS_OFFLINE: "0" };
     let hfEndpoint = "";
-    if (sh(vpy, ["-c", dl], { HF_HOME: hf }, { ok: true }).status !== 0) {
+    if (sh(vpy, ["-c", dl], { HF_HOME: hf, ...online }, { ok: true }).status !== 0) {
       console.log("Hugging Face 连不上，改用国内镜像 hf-mirror.com …"); hfEndpoint = "https://hf-mirror.com";
-      sh(vpy, ["-c", dl], { HF_HOME: hf, HF_ENDPOINT: hfEndpoint });
+      sh(vpy, ["-c", dl], { HF_HOME: hf, HF_ENDPOINT: hfEndpoint, ...online });
     }
     const c = read(); write({ ...c, python: vpy, model: MODEL, hf_home: hf, ...(hfEndpoint ? { hf_endpoint: hfEndpoint } : {}), language: "Chinese", device: gpu ? "cuda:0" : "cpu" });
     console.log(`✓ 语音环境装好了。配置：${CFG}\n  下一步：node bin/mjv.mjs voice setup --ref=<本人录音.wav>`);
@@ -54,7 +61,7 @@ export async function voice(ROOT, sub, flags) {
     if (flags.text) { c.ref_text = String(flags.text); c.ref_text_verified = true; c.x_vector_only = false; console.log("✓ 已写入核对过的逐字稿，用完整克隆模式"); }
     else if (!c.ref_text) {
       console.log("没有逐字稿：自动转写一份草稿（机器转写会有错字）…");
-      const r = sh(c.python, [path.join(ROOT, "tools", "voice", "transcribe.py"), c.ref_audio, "--hf_home", c.hf_home || ""], c.hf_endpoint ? { HF_ENDPOINT: c.hf_endpoint } : {}, { capture: true });
+      const r = sh(c.python, [path.join(ROOT, "tools", "voice", "transcribe.py"), c.ref_audio, "--hf_home", c.hf_home || ""], { HF_HUB_OFFLINE: "0", ...(c.hf_endpoint ? { HF_ENDPOINT: c.hf_endpoint } : {}) }, { capture: true });
       const line = r.stdout.trim().split("\n").pop(); const j = JSON.parse(line);
       c.ref_text_draft = j.text; c.x_vector_only = true;
       console.log(`  草稿：${j.text}\n  ⚠ 现在先用"只取音色特征"模式（不需要逐字稿，相似度略低）。\n  请本人听一遍录音，把上面的草稿改成逐字准确的文字，再运行：\n  node bin/mjv.mjs voice setup --text="改好的逐字稿"`);
