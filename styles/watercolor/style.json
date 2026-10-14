@@ -1,0 +1,62 @@
+{
+  "name": "watercolor",
+  "title": "水彩",
+  "desc": "白色水彩纸、石板灰字、玫瑰红和湖蓝。整帧做成水彩：颜色分层成平涂、颜料晕开、边缘积色加深、纸纹明显。适合温柔的科普、自然、心理、旅行。",
+  "theme": {
+    "name": "watercolor",
+    "mode": "light",
+    "texture": "none",
+    "bg": {
+      "type": "flat",
+      "center": "#fbfaf6",
+      "edge": "#fbfaf6"
+    },
+    "dust": {
+      "count": 0
+    },
+    "glowScale": 0.2,
+    "textGlow": 0,
+    "hiGlow": 0,
+    "post": {
+      "preset": "watercolor",
+      "bleed": 1.1,
+      "wash": 0.12,
+      "edge": 0.55
+    },
+    "text": "#2f3a45",
+    "dim": "#4a5663",
+    "muted": "#7d8894",
+    "accent": "#e0607e",
+    "cold": "#3a8fb7",
+    "highlight": "#1f2a35",
+    "warn": "#e0607e",
+    "glow": "#e0607e",
+    "shine": "#2f3a45",
+    "halo": "#f3b4c3",
+    "coldDot": "#3a8fb7",
+    "coldLine": "#a9c4d4",
+    "bar": "#d9dee3",
+    "panel": "#ffffff",
+    "card": "#ffffff",
+    "panelSolid": "#fbfaf6",
+    "terrainLow": "#f6d5dd",
+    "terrainHigh": "#fbfaf6"
+  },
+  "fonts": [
+    {
+      "family": "SongB",
+      "src": "assets/fonts/NotoSerifSC-Bold.otf"
+    },
+    {
+      "family": "SongH",
+      "src": "assets/fonts/NotoSerifSC-Black.otf"
+    }
+  ],
+  "fontsToLoad": [
+    "40px SongB",
+    "40px SongH"
+  ],
+  "music": {
+    "bpm": 84
+  }
+}

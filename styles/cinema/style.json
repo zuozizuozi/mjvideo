@@ -1,0 +1,57 @@
+{
+  "name": "cinema",
+  "title": "电影感",
+  "desc": "宽银幕遮幅、青橙调色、高光溢出的光晕、胶片颗粒、轻微画面晃动和漏光。像电影预告片。适合叙事、悬念、人物故事、大事件回顾。",
+  "theme": {
+    "name": "cinema",
+    "mode": "dark",
+    "texture": "none",
+    "bg": {
+      "center": "#13202a",
+      "edge": "#030507"
+    },
+    "dust": {
+      "color": "#f3d3a0",
+      "count": 60
+    },
+    "glowScale": 0.8,
+    "post": {
+      "preset": "film"
+    },
+    "text": "#f4ead8",
+    "dim": "#d8ccb8",
+    "muted": "#9a8f7e",
+    "accent": "#f0a64a",
+    "cold": "#4fb3bf",
+    "highlight": "#ffffff",
+    "warn": "#f0a64a",
+    "glow": "#ffb35c",
+    "shine": "#ffffff",
+    "halo": "#ffe2b8",
+    "coldDot": "#4fb3bf",
+    "coldLine": "#2f5560",
+    "bar": "#3a4650",
+    "panel": "#081015",
+    "card": "#0f1a21",
+    "panelSolid": "#081015",
+    "terrainLow": "#3a2c1c",
+    "terrainHigh": "#030507"
+  },
+  "fonts": [
+    {
+      "family": "SongB",
+      "src": "assets/fonts/NotoSerifSC-Bold.otf"
+    },
+    {
+      "family": "SongH",
+      "src": "assets/fonts/NotoSerifSC-Black.otf"
+    }
+  ],
+  "fontsToLoad": [
+    "40px SongB",
+    "40px SongH"
+  ],
+  "music": {
+    "bpm": 74
+  }
+}

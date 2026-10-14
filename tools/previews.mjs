@@ -22,7 +22,7 @@ export async function previews(ROOT, flags) {
     for (const name of fs.readdirSync(path.join(ROOT, "styles")).sort()) {
       const sp = path.join(ROOT, "styles", name, "style.json"); if (!fs.existsSync(sp)) continue;
       const out = path.join(ROOT, "styles", name, "preview.jpg");
-      if (!newer(out, sp, path.join(SHOW, "project.json"), path.join(ROOT, "engine", "lib.js"))) { console.log(`  风格 ${name}：已是最新`); continue; }
+      if (!newer(out, sp, path.join(SHOW, "project.json"), path.join(ROOT, "engine", "lib.js"), path.join(ROOT, "engine", "post.js"))) { console.log(`  风格 ${name}：已是最新`); continue; }
       const st = read(sp), dir = path.join(ROOT, "styles", name, "_build");
       fs.mkdirSync(path.join(dir, "assets"), { recursive: true });
       fs.copyFileSync(path.join(SHOW, "assets", "sample.jpg"), path.join(dir, "assets", "sample.jpg"));

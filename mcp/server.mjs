@@ -19,7 +19,7 @@ import { fileURLToPath } from "node:url";
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const PROJECTS = path.resolve(process.env.MJV_PROJECTS || path.join(ROOT, "projects"));
 const DEFAULT_WAIT = Number(process.env.MJV_MCP_WAIT || 3.5);
-const VERSION = "0.3.0";
+const VERSION = "0.4.0";
 const log = (...a) => process.stderr.write("[mjvideo-mcp] " + a.join(" ") + "\n");   // stdout 只能写协议消息
 
 // ---------------- 工具定义 ----------------
@@ -28,7 +28,9 @@ const waitProp = { type: "number", description: `最多等待多少秒再返回�
 const TOOLS = [
   { name: "mjv_guide",
     description: "读取 mjvideo 引擎的完整使用手册（SKILL.md）：工作流、场景编写规范、project.json 格式、无口播 Vibe 风格、常见错误。第一次用本引擎时必须先读。",
-    inputSchema: { type: "object", properties: { section: { type: "string", description: "只看某一节：填节号（如 \"2\"、\"11\"）或关键词；不填返回全文" } } } },
+    inputSchema: { type: "object", properties: {
+      doc: { type: "string", enum: ["skill", "visual", "art", "case"], description: "skill 使用手册（默认）/ visual 视觉手法（怎么把一句话变成画面、比喻库、动效、运镜、字幕样式、画风、什么时候问用户）/ art 美术指导流程 / case EP09 案例" },
+      section: { type: "string", description: "只看某一节：填节号（如 \"2\"、\"11\"）或关键词；不填返回全文" } } } },
   { name: "mjv_scenes",
     description: "列出场景库（以及某个项目自带的场景）：名字、用途说明、尺寸、可调参数和 cues。选场景前先看这个。",
     inputSchema: { type: "object", properties: { project: projectProp } } },
@@ -41,6 +43,9 @@ const TOOLS = [
   { name: "mjv_ref",
     description: "分析参考图 / 参考视频（本机文件路径）：复制到项目 refs/，生成关键帧拼图（视频按时间取 24 帧）、主色和强调色色板、镜头切换节奏和运动量报告，并把拼图和色板作为图片返回。用来提炼风格写美术方案，不是照抄。录屏素材最好先裁掉手机界面。",
     inputSchema: { type: "object", properties: { project: projectProp, files: { type: "array", items: { type: "string" }, description: "参考素材的绝对路径（图片、视频或文件夹）" }, wait_seconds: waitProp }, required: ["project", "files"] } },
+  { name: "mjv_history",
+    description: "列出以往所有项目的长相：标题、风格包、后期画风、主配色、美术方案摘要（design.md）。写新美术方案前用它做防重复检查：新方案要和以往每一期在视觉概念、主配色、动效语言、招牌镜头手法四项里至少三项不同。",
+    inputSchema: { type: "object", properties: {} } },
   { name: "mjv_notes",
     description: "读用户在工作台（mjv studio）里写的修改意见：每条有镜头号、类型（change 修改 / newscene 需要新画面）、内容、状态。处理完一条就用 done 把它标成已完成（可附一句 reply 说明怎么改的）。开工前和交付前都要看一遍。",
     inputSchema: { type: "object", properties: { project: projectProp, done: { type: "array", items: { type: "string" }, description: "要标成已完成的意见 id" }, reply: { type: "string", description: "给这些意见的回复（可选）" }, all: { type: "boolean", description: "连已完成的也列出来" } }, required: ["project"] } },
@@ -130,11 +135,12 @@ function sheet(files, out) {           // 把若干静帧拼成每行 3 张、�
 }
 
 const handlers = {
-  async mjv_guide({ section } = {}) {
-    const md = fs.readFileSync(path.join(ROOT, "SKILL.md"), "utf8");
+  async mjv_guide({ section, doc } = {}) {
+    const DOCS = { skill: "SKILL.md", visual: "docs/视觉手法.md", art: "prompts/art_director.md", case: "docs/案例_EP09.md" };
+    const md = fs.readFileSync(path.join(ROOT, DOCS[doc || "skill"] || DOCS.skill), "utf8");
     const info = `引擎目录：${ROOT}\n项目目录：${PROJECTS}\n（改 project.json 和场景代码用你自己的文件编辑工具；跑命令用 mjv_run / mjv_stills）\n\n`;
     if (!section) return { content: [text(info + md)] };
-    const parts = md.split(/\n(?=## )/);
+    const parts = md.split(/\n(?=## )/);   // 视觉手法里的节号是"一、二、三……"，按关键词找即可
     const sec = String(section).trim();
     const hit = /^\d+$/.test(sec) ? parts.filter((s) => s.startsWith(`## ${sec}.`))          // 节号只按标题匹配
       : parts.filter((s) => s.toLowerCase().includes(sec.toLowerCase()));
@@ -151,7 +157,14 @@ const handlers = {
     const job = startJob("new", ["new", pdir, ...(vibe ? ["--vibe"] : []), ...(style ? [`--style=${style}`] : [])]);
     await job.done;
     if (job.status !== "done") return jobReport(job);
-    return { content: [text(`✓ 新项目：${pdir}\n下一步：改 project.json（格式见 mjv_guide），需要新画面时在 ${path.join(pdir, "scenes")} 写场景。\n\n--- project.json ---\n` + fs.readFileSync(path.join(pdir, "project.json"), "utf8"))] };
+    const next = vibe || style ? `下一步（按顺序）：
+1. 写文案分镜（每个镜头的 lines），给用户确认。
+2. 美术方案：读 mjv_guide doc=art（流程）和 doc=visual（比喻库、动效、运镜、画风），用 mjv_history 做防重复检查，用 mjv_styles 看风格包。
+   给用户 2–3 个差别明显的方案，每个先在一两个关键镜头上做出来，用 mjv_stills 出静帧一起给用户看，**等用户选**。
+3. 选定后写 design.md、改 project.json 的 theme，按方案写场景（新画面写在 ${path.join(pdir, "scenes")}，颜色字体从 MJ.theme 取）。
+4. mjv_run timeline / check → mjv_stills 逐镜头看 → 用户确认 → render → audio → mux → validate。
+用户可能在工作台里留了意见：随时用 mjv_notes 看。` : `下一步：改 project.json（格式见 mjv_guide），需要新画面时在 ${path.join(pdir, "scenes")} 写场景。`;
+    return { content: [text(`✓ 新项目：${pdir}\n${next}\n\n--- project.json ---\n` + fs.readFileSync(path.join(pdir, "project.json"), "utf8"))] };
   },
   async mjv_styles() { return waitJob(startJob("styles", ["styles"]), 20); },
   async mjv_ref({ project, files, wait_seconds }) {
@@ -166,6 +179,18 @@ const handlers = {
       return outs;
     };
     return waitJob(startJob(`ref ${path.basename(pdir)}`, ["ref", pdir, ...list], { after }), wait_seconds);
+  },
+  async mjv_history() {
+    const rows = [];
+    for (const n of fs.existsSync(PROJECTS) ? fs.readdirSync(PROJECTS) : []) {
+      const d = path.join(PROJECTS, n), pj = path.join(d, "project.json"); if (!fs.existsSync(pj)) continue;
+      let cfg; try { cfg = JSON.parse(fs.readFileSync(pj, "utf8")); } catch { continue; }
+      const th = cfg.theme || {}, dz = path.join(d, "design.md");
+      const design = fs.existsSync(dz) ? fs.readFileSync(dz, "utf8").split("\n").filter((l) => /^\s*[-*]/.test(l)).slice(0, 6).join("\n") : "（没有 design.md）";
+      rows.push(`## ${n}：${cfg.title || ""}\n风格包 ${cfg.style || th.name || "默认"}；后期 ${th.post ? th.post.preset || "自定义" : "无"}；${th.mode === "light" ? "浅底" : "深底"}；底 ${th.bg?.center || "#12172c"}，强调 ${th.accent || "#f3c46b"}；镜头 ${(cfg.shots || []).length} 个\n${design}`);
+    }
+    for (const f of fs.readdirSync(path.join(ROOT, "docs")).filter((x) => x.startsWith("案例_"))) rows.push(`## ${f}（案例文档，见 mjv_guide doc=case）`);
+    return { content: [text(rows.join("\n\n") || "还没有以往项目。")] };
   },
   async mjv_notes({ project, done, reply, all }) {
     const pdir = resolveProject(project), p = path.join(pdir, "review.json");

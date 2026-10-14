@@ -1,0 +1,57 @@
+{
+  "name": "oil-painting",
+  "title": "古典油画",
+  "desc": "深棕底色、奶油色字、朱红和群青。整帧做成油画：细节并成笔触色块、厚涂的浮雕光影、画布纹理。适合艺术、历史、人文、厚重的主题。",
+  "theme": {
+    "name": "oil-painting",
+    "mode": "dark",
+    "texture": "none",
+    "bg": {
+      "center": "#4a3522",
+      "edge": "#140d07"
+    },
+    "dust": {
+      "color": "#f1d9a8",
+      "count": 30
+    },
+    "glowScale": 0.5,
+    "post": {
+      "preset": "oil"
+    },
+    "text": "#f1e3c6",
+    "dim": "#d9c7a4",
+    "muted": "#a8946f",
+    "accent": "#e0662f",
+    "cold": "#4a7fb0",
+    "highlight": "#fff4dc",
+    "warn": "#e0662f",
+    "glow": "#f0a050",
+    "shine": "#fff4dc",
+    "halo": "#f6deb0",
+    "coldDot": "#4a7fb0",
+    "coldLine": "#6a5a44",
+    "bar": "#5a4632",
+    "panel": "#1c130b",
+    "card": "#2a1d12",
+    "panelSolid": "#1c130b",
+    "terrainLow": "#7a4a26",
+    "terrainHigh": "#140d07"
+  },
+  "fonts": [
+    {
+      "family": "SongB",
+      "src": "assets/fonts/NotoSerifSC-Bold.otf"
+    },
+    {
+      "family": "SongH",
+      "src": "assets/fonts/NotoSerifSC-Black.otf"
+    }
+  ],
+  "fontsToLoad": [
+    "40px SongB",
+    "40px SongH"
+  ],
+  "music": {
+    "bpm": 70
+  }
+}

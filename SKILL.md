@@ -324,7 +324,7 @@ MJ.scene("piston", {
 - **字幕也是设计的一部分**：位置、字号、字体、出现方式（淡入、打字、逐字弹出、贴着画面元素走、手写描边……）按美术方案来，不必每条都居中淡入。`caption` 不够用就在场景里自己画。
 
 ### 工具（`MJ.lib`）
-`bgVibe(c, u, opts)` 主题背景（渐变 + 纹理 + 微尘）；`glowDot([r,g,b], 半径)` + `dot()` 发光点精灵（用 `MJ.theme.blend` 叠加）；`textPoints()` / `samplePoints()` / `imagePoints()` 把文字、图形、图片采样成粒子；`image()` / `drawImageFit()` 图片；`mixRGB`；`SONG(n)` / `SONGH(n)` 主题的正文 / 标题字体。
+`bgVibe(c, u, opts)` 主题背景（渐变 + 纹理 + 微尘）；`glowDot([r,g,b], 半径)` + `dot()` 发光点精灵（用 `MJ.theme.blend` 叠加）；`textPoints()` / `samplePoints()` / `imagePoints()` 把文字、图形、图片采样成粒子；`image()` / `drawImageFit()` 图片；`cam(c, { x, y, zoom, rot })` 运镜；`stagger(u, i, n, 开始, 跨度, 时长)` 错峰出场；`mixRGB`；`SONG(n)` / `SONGH(n)` 主题的正文 / 标题字体。
 
 > **字体和图片在 `create` 运行时还没加载完。** 凡是要量文字宽度、把文字或图片采样成点的，放到第一次绘制时再做（`let lay = null; ... if (!lay) lay = layout(c);`）。
 
@@ -355,8 +355,10 @@ MJ.scene("piston", {
 
 ## 12. 风格与美术方案（每条视频都要做）
 
+**怎么想画面、选画风、什么时候问用户，详见 `docs/视觉手法.md`**（MCP：`mjv_guide` 的 `doc: "visual"`）。流程见 `prompts/art_director.md`。
+
 ### 三种起点，任选
-1. **选一个风格包**：`node bin/mjv.mjs styles` 查看。`new --style=<名>` 会把风格包的主题写进 project.json，**之后随便改**。现有 12 套：`dark-gold` 暗金星尘、`paper` 纸本手绘、`neon` 霓虹终端、`swiss` 极简瑞士、`blueprint` 工程蓝图、`ink` 水墨宣纸、`chalkboard` 黑板粉笔、`retro-pop` 复古波普、`pastel` 马卡龙、`noir` 黑白电影、`synthwave` 合成波、`kraft` 牛皮纸手作。样张在 `styles/<名>/preview.jpg`，工作台里可以并排比较。
+1. **选一个风格包**：`node bin/mjv.mjs styles` 查看。`new --style=<名>` 会把风格包的主题写进 project.json，**之后随便改**。现有 16 套（其中 `sketchbook` 手绘速写、`cinema` 电影感、`oil-painting` 古典油画、`watercolor` 水彩带整帧后期画风）：`dark-gold` 暗金星尘、`paper` 纸本手绘、`neon` 霓虹终端、`swiss` 极简瑞士、`blueprint` 工程蓝图、`ink` 水墨宣纸、`chalkboard` 黑板粉笔、`retro-pop` 复古波普、`pastel` 马卡龙、`noir` 黑白电影、`synthwave` 合成波、`kraft` 牛皮纸手作、`sketchbook`、`cinema`、`oil-painting`、`watercolor`。样张在 `styles/<名>/preview.jpg`，工作台里可以并排比较。
 2. **从参考素材提炼**：用户给了参考图 / 参考视频，先 `mjv ref`（第 13 节），看拼图和色板，提炼出这条视频自己的风格。
 3. **完全自由创作**：话题本身有强烈的视觉联想（比如讲"记忆"可以用胶片和褪色照片，讲"算力"可以用工厂和流水线），就自己定。
 
@@ -416,6 +418,7 @@ project.json 的 `theme`（风格包会写好一份，可以改）。场景里 `
 | `panel` `card` `panelSolid` `bar` | 面板、卡片、实心底、进度条底色 | 同上 |
 | `fonts.title` `fonts.body` `fonts.titleWeight` `fonts.bodyWeight` | 标题和正文字体（CSS 字体串） | `SONGH(n)`、`SONG(n)` |
 | `glowScale` `textGlow` `hiGlow` | 发光强度（浅色风格调小） | `glowText` / `caption` 自动用 |
+| `post` | 整帧后期画风：`{ "preset": "handdrawn" / "film" / "oil" / "watercolor", ...参数 }` | 引擎自动处理（`engine/post.js`），场景不用管。渲染时间大约多 10% |
 
 新场景如果需要额外的颜色，**加到主题里**（在 project.json 的 theme 写新字段，场景里 `TH.myColor || 默认值`），不要写死在代码里。新风格包放 `styles/<名>/style.json`（照现有的写），攒到十几二十个就够一个工作室用。
 

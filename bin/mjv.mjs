@@ -97,6 +97,7 @@ ${(cfg.vendorScripts || []).map((v) => `<script src="${fileUrl(path.resolve(pdir
 <script src="${fileUrl(path.join(ENGINE, "lib.js"))}"></script>
 ${files.map((f) => `<script src="${fileUrl(f)}"></script>`).join("\n")}
 <script src="${fileUrl(path.join(ENGINE, "runtime.js"))}"></script>
+<script src="${fileUrl(path.join(ENGINE, "post.js"))}"></script>
 </body></html>`;
   fs.writeFileSync(b("page.html"), html);
   return { tl, files: Object.fromEntries(names.map((n, i) => [n, files[i]])) };
@@ -152,7 +153,7 @@ async function loadSession(P) {
 function segmentPlan(P, tl, files, bounds) {
   const { cfg, pdir } = P, fps = cfg.format.fps, shots = cfg.shots, n = shots.length;
   const totalFrames = Math.round(tl.total * fps);
-  const engineSrc = ["lib.js", "runtime.js"].map((f) => fs.readFileSync(path.join(ENGINE, f), "utf8")).join("");
+  const engineSrc = ["lib.js", "runtime.js", "post.js"].map((f) => fs.readFileSync(path.join(ENGINE, f), "utf8")).join("");
   const sceneSrc = (name) => fs.readFileSync(files[name], "utf8");
   const anyThumbs = (i) => { const m = sceneMeta(files[shots[i].scene])[0]; return m && m.needsThumbs; };
   const avatarP = cfg.overlay.avatar ? path.join(pdir, cfg.overlay.avatar) : "";

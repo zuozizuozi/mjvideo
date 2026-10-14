@@ -1,0 +1,64 @@
+{
+  "name": "sketchbook",
+  "title": "手绘速写",
+  "desc": "整帧做成钢笔速写：边缘勾出墨线、颜色淡成淡彩、线条每秒抖几下、动作降到每秒 12 帧，像手绘动画。楷体字。适合故事感、轻松科普、人物和生活话题。",
+  "theme": {
+    "name": "sketchbook",
+    "mode": "light",
+    "texture": "none",
+    "bg": {
+      "type": "flat",
+      "center": "#f6f1e4",
+      "edge": "#f6f1e4"
+    },
+    "dust": {
+      "count": 0
+    },
+    "glowScale": 0,
+    "textGlow": 0,
+    "hiGlow": 0,
+    "fonts": {
+      "title": "KaiTi, STKaiti, Kai, serif",
+      "body": "KaiTi, STKaiti, Kai, serif"
+    },
+    "post": {
+      "preset": "handdrawn",
+      "paper": 0.08
+    },
+    "text": "#1f1b16",
+    "dim": "#3a342c",
+    "muted": "#6f665a",
+    "accent": "#c0392b",
+    "cold": "#2c5d8a",
+    "highlight": "#111111",
+    "warn": "#c0392b",
+    "glow": "#c0392b",
+    "shine": "#1f1b16",
+    "halo": "#c0392b",
+    "coldDot": "#2c5d8a",
+    "coldLine": "#8a8f99",
+    "bar": "#c9bfae",
+    "panel": "#efe8d8",
+    "card": "#fbf8f0",
+    "panelSolid": "#f6f1e4",
+    "terrainLow": "#e5dccb",
+    "terrainHigh": "#f6f1e4"
+  },
+  "fonts": [
+    {
+      "family": "SongB",
+      "src": "assets/fonts/NotoSerifSC-Bold.otf"
+    },
+    {
+      "family": "SongH",
+      "src": "assets/fonts/NotoSerifSC-Black.otf"
+    }
+  ],
+  "fontsToLoad": [
+    "40px SongB",
+    "40px SongH"
+  ],
+  "music": {
+    "bpm": 92
+  }
+}

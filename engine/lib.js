@@ -205,8 +205,18 @@ function imagePoints(img, x, y, w, h, step = 6, fit = "cover") {
   return pts;
 }
 
+// ---------- 运镜和错峰出场 ----------
+// cam(c, { x, y, zoom, rot })：把"镜头"对准世界坐标 (x, y)，放大 zoom 倍、旋转 rot 弧度。之后画的东西都在世界坐标里。
+// 用法：c.save(); cam(c, { x: mix(960, 1300, k), y: 540, zoom: mix(1, 1.6, k) }); ...画世界...; c.restore();
+function cam(c, o = {}) {
+  const W = MJ.lib.W, H = MJ.lib.H, z = o.zoom ?? 1;
+  c.translate(W / 2, H / 2); if (o.rot) c.rotate(o.rot); c.scale(z, z); c.translate(-(o.x ?? W / 2), -(o.y ?? H / 2));
+}
+// stagger(u, i, n, start, span, dur)：第 i 个（共 n 个）元素的出场进度 0→1。n 个元素在 [start, start+span] 里依次开始，每个用 dur 秒
+const stagger = (u, i, n, start, span = 1, dur = 0.5, ease = E.out) => pr(u, start + (n > 1 ? (i / (n - 1)) * span : 0), dur, ease);
+
 // W/H/FPS 在 boot 时按场景的设计尺寸设置（竖屏场景默认 1080×1920）
 MJ.lib = { W: 1080, H: 1920, FPS: 30, clamp, mix, E, pr, rng, canvas, rr, text, typed, HEAVY, YH, MONO, KAI, SERIF,
            SONG, SONGH, parseMarks, lineAlpha, glowText, caption, captions,
-           bgVibe, glowDot, dot, samplePoints, textPoints, mixRGB, GOLD, ICE, PAPER, hexRGB, T: THEME, image, drawImageFit, imagePoints };
+           bgVibe, glowDot, dot, samplePoints, textPoints, mixRGB, GOLD, ICE, PAPER, hexRGB, T: THEME, image, drawImageFit, imagePoints, cam, stagger };
 })();
