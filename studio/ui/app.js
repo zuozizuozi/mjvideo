@@ -163,3 +163,8 @@ async function route() {
   } catch (e) { app.innerHTML = `<div class="empty">出错了：${esc(e.message)}</div>`; }
 }
 window.onhashchange = route; route();
+// 环境检查：有缺的东西就在顶部提醒（例如这台电脑还没装本人音色）
+api("/api/doctor").then((rows) => {
+  const bad = rows.filter((r) => r.ok !== "ok"); if (!bad.length) return;
+  $("#doctor").innerHTML = `<div class="warn">${bad.map((r) => `<div><b>${r.ok === "bad" ? "✗" : "⚠"} ${esc(r.name)}</b>：${esc(r.detail)}${r.fix ? `　→ <code>${esc(r.fix)}</code>` : ""}</div>`).join("")}</div>`;
+}).catch(() => {});

@@ -21,6 +21,8 @@ description: 用纯代码（Canvas/HTML + 无头 Chrome 逐帧渲染 + FFmpeg）
 
 ## 0. 开工前检查（每次新会话都做）
 
+**先跑 `node bin/mjv.mjs doctor`**（MCP：`mjv_doctor`），它逐项检查并告诉你缺什么、怎么装；有 ✗ / ⚠ 先告诉用户。下面是它检查的内容：
+
 ```bash
 node --version          # 需要 ≥ 22（内置 WebSocket）
 ffmpeg -version         # 需要 libx264
@@ -28,7 +30,7 @@ python --version        # 3.8+，并且 python -c "import edge_tts, PIL, jieba" 
 node bin/mjv.mjs scenes # 能列出场景库
 ```
 Chrome 默认路径 `C:/Program Files/Google/Chrome/Application/chrome.exe`，不同就设环境变量 `MJV_CHROME`。
-配音默认用 edge-tts（免费，需要联网）。
+配音默认用 edge-tts（免费，需要联网；版本要 ≥ 7.3，旧版会被微软拒绝）。本人音色见 `docs/本人音色.md`（每台电脑装一次，约 5GB）。
 
 如果用户有自己的制作规范（例如 `E:\公司工作区\视频制作规范`）或记忆里有平台规则，**先读完再动手**，规范优先于本文件的默认值。
 

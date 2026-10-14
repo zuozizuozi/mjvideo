@@ -21,6 +21,13 @@
 
 安装 Python 包：`pip install edge-tts pillow jieba`
 
+## 新电脑先做
+
+```bash
+node bin/mjv.mjs doctor          # 逐项检查环境，缺什么告诉你怎么装
+node bin/mjv.mjs voice install   # 本人音色（可选，约 5GB，见 docs/本人音色.md）
+```
+
 ## 快速开始
 
 ```bash

@@ -2,6 +2,7 @@
 
 这个目录是麻酱代码视频引擎。接到“做一条科普/讲解视频”“把讲稿做成视频”“给某个知识点做动画”的任务时：
 
+0. **每次开工先跑 `node bin/mjv.mjs doctor`**（MCP：`mjv_doctor`）。有 ✗ 或 ⚠ 就先告诉用户缺什么、怎么装（尤其是"本人音色"：没装时配音会用 AI 声音代替）。要下载大文件（本人音色约 5GB）先问用户。说明见 `docs/本人音色.md`。
 1. 先完整读 `SKILL.md`，照着第 1 节的标准流程执行。
 2. 编导阶段读 `prompts/director.md`；文案定稿后、写场景前，按 `prompts/art_director.md` 做美术方案（每条视频都要做，要和以往作品看得出区别）；写场景读 `prompts/scene_author.md`。
 3. 所有操作通过 `node bin/mjv.mjs <命令> <项目目录>`，不要自己拼 FFmpeg 命令合成成片。
@@ -14,3 +15,4 @@
 10. 加了新场景或新风格包后跑 `node bin/mjv.mjs previews`，更新工作台的样张和预览。
 11. 写美术方案、新画面之前读 `docs/视觉手法.md`（MCP：`mjv_guide` 的 `doc: "visual"`）。美术方案要先在关键镜头上做出静帧给用户挑，不要只用文字描述，也不要替用户决定。防重复检查用 MCP `mjv_history`。
 12. 试玩解说（用户给无声录屏）：读 `prompts/game_commentary.md`（MCP：`mjv_guide` 的 `doc: "gameplay"`），用 `mjv_games` / `mjv_footage` / `mjv_cover`。见 `SKILL.md` 第 17 节。
+13. 交付配音视频时说明用的是本人音色还是 AI 声音：项目里有 `build/audio/VOICE_FALLBACK.txt` 就是没用上本人音色，要提醒用户。

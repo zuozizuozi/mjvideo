@@ -99,6 +99,7 @@ export async function studio(ROOT, flags) {
   // ---------- 接口 ----------
   const api = {
     "GET /api/styles": () => styles(),
+    "GET /api/doctor": () => { const r = spawnSync(process.execPath, [MJV, "doctor", "--json-out"], { cwd: ROOT, encoding: "utf8" }); try { return JSON.parse(r.stdout); } catch { return []; } },
     "GET /api/scenes": () => { sceneCache = null; return scenes(); },
     "GET /api/projects": () => projects(),
     "GET /api/games": () => { const d = path.join(ROOT, "games"); return fs.existsSync(d) ? fs.readdirSync(d).filter((f) => f.endsWith(".json")).map((f) => readJSON(path.join(d, f))) : []; },

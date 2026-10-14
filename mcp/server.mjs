@@ -19,13 +19,16 @@ import { fileURLToPath } from "node:url";
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const PROJECTS = path.resolve(process.env.MJV_PROJECTS || path.join(ROOT, "projects"));
 const DEFAULT_WAIT = Number(process.env.MJV_MCP_WAIT || 3.5);
-const VERSION = "0.5.0";
+const VERSION = "0.6.0";
 const log = (...a) => process.stderr.write("[mjvideo-mcp] " + a.join(" ") + "\n");   // stdout 只能写协议消息
 
 // ---------------- 工具定义 ----------------
 const projectProp = { type: "string", description: "项目名（在项目目录下）或项目的绝对路径" };
 const waitProp = { type: "number", description: `最多等待多少秒再返回（默认 ${DEFAULT_WAIT}，最大 50）。没跑完会返回 job_id，用 mjv_job 继续查` };
 const TOOLS = [
+  { name: "mjv_doctor",
+    description: "环境检查（每次开工先调一次）：Node、FFmpeg、Chrome、Python 依赖、免费 AI 配音能否连通、本人音色有没有装好、字体、游戏仓库。有 ✗ / ⚠ 要告诉用户缺什么、怎么装，不要默默绕过；下载大文件（本人音色约 5GB）先问用户。",
+    inputSchema: { type: "object", properties: { online: { type: "boolean", description: "顺便测一下微软在线配音能不能连通" } } } },
   { name: "mjv_guide",
     description: "读取 mjvideo 引擎的完整使用手册（SKILL.md）：工作流、场景编写规范、project.json 格式、无口播 Vibe 风格、常见错误。第一次用本引擎时必须先读。",
     inputSchema: { type: "object", properties: {
@@ -182,6 +185,7 @@ const handlers = {
 用户可能在工作台里留了意见：随时用 mjv_notes 看。` : `下一步：改 project.json（格式见 mjv_guide），需要新画面时在 ${path.join(pdir, "scenes")} 写场景。`;
     return { content: [text(`✓ 新项目：${pdir}\n${next}\n\n--- project.json ---\n` + fs.readFileSync(path.join(pdir, "project.json"), "utf8"))] };
   },
+  async mjv_doctor({ online } = {}) { return waitJob(startJob("doctor", ["doctor", ...(online ? ["--online"] : [])]), 45); },
   async mjv_styles() { return waitJob(startJob("styles", ["styles"]), 20); },
   async mjv_ref({ project, files, wait_seconds }) {
     const pdir = resolveProject(project);
@@ -305,7 +309,7 @@ async function handle(msg) {
     const v = SUPPORTED.includes(params?.protocolVersion) ? params.protocolVersion : SUPPORTED[0];
     return reply(id, { protocolVersion: v, capabilities: { tools: { listChanged: false } },
       serverInfo: { name: "mjvideo", version: VERSION },
-      instructions: "mjvideo：用代码（Canvas + 无头 Chrome + FFmpeg）做讲解视频的引擎，不调用视频生成模型。第一次使用先调 mjv_guide 读手册。流程：mjv_new_project（可选 style）→ 有参考素材先 mjv_ref → 用户可能在工作台（mjv studio）里选了风格、换了场景、写了意见，先 mjv_notes 读意见 → 写美术方案 design.md、改 project.json 的 theme 和场景代码 → mjv_run timeline/check → mjv_stills 看画面并修改 → mjv_run render → audio → mux → validate。风格和画面自由发挥，场景库只是零件。长任务会返回 job_id，用 mjv_job 查。" });
+      instructions: "mjvideo：用代码（Canvas + 无头 Chrome + FFmpeg）做讲解视频的引擎，不调用视频生成模型。每次开工先调 mjv_doctor 检查环境（有问题告诉用户），第一次使用先调 mjv_guide 读手册。流程：mjv_new_project（可选 style）→ 有参考素材先 mjv_ref → 用户可能在工作台（mjv studio）里选了风格、换了场景、写了意见，先 mjv_notes 读意见 → 写美术方案 design.md、改 project.json 的 theme 和场景代码 → mjv_run timeline/check → mjv_stills 看画面并修改 → mjv_run render → audio → mux → validate。风格和画面自由发挥，场景库只是零件。长任务会返回 job_id，用 mjv_job 查。" });
   }
   if (method === "ping") return reply(id, {});
   if (method === "tools/list") return reply(id, { tools: TOOLS });

@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 // mjv —— 麻酱视频引擎命令行入口（零 npm 依赖：Node 24 + Chrome + FFmpeg + Python）
 //
+//   node bin/mjv.mjs doctor [--online]                环境检查（新电脑、每次开工前）：缺什么、怎么装
+//   node bin/mjv.mjs voice install|setup|test|status  本人音色（docs/本人音色.md）
 //   node bin/mjv.mjs new <项目目录> [--vibe] [--style=名] [--template=gameplay]  新建项目（--vibe 无口播横屏；--style 套风格包；--template=gameplay 试玩解说）
 //   node bin/mjv.mjs styles                         列出风格包
 //   node bin/mjv.mjs previews [--force]             生成风格包样张和场景预览小片（工作台用）
@@ -322,6 +324,8 @@ switch (cmd) {
     break;
   }
   case "cover": { const P = project(pos[0]); const { cover } = await import(pathToFileURL(path.join(TOOLS, "cover.mjs")).href); cover(ROOT, P.pdir, flags); break; }
+  case "voice": { const { voice } = await import(pathToFileURL(path.join(TOOLS, "voice", "manage.mjs")).href); await voice(ROOT, pos[0] || "status", flags); break; }
+  case "doctor": { const { doctor } = await import(pathToFileURL(path.join(TOOLS, "doctor.mjs")).href); doctor(ROOT, flags, CHROME, PY); break; }
   case "studio": { const { studio } = await import(pathToFileURL(path.join(TOOLS, "studio.mjs")).href); await studio(ROOT, flags); break; }
   case "previews": { const { previews } = await import(pathToFileURL(path.join(TOOLS, "previews.mjs")).href); await previews(ROOT, flags); break; }
   case "ref": { const P = project(pos[0]); if (!pos[1]) die("用法：mjv ref <项目> <参考图或视频…>"); py("ref.py", P.pdir, ...pos.slice(1).map((f) => path.resolve(f))); break; }

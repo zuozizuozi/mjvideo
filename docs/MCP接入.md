@@ -1,6 +1,6 @@
 # MCP 接入：让 Codex / Claude Code / Zaovra / Cursor 调用 mjvideo
 
-`mcp/server.mjs` 是一个 stdio MCP 服务（零 npm 依赖），把 `mjv` 命令行包成 14 个工具。
+`mcp/server.mjs` 是一个 stdio MCP 服务（零 npm 依赖），把 `mjv` 命令行包成 15 个工具。
 Agent 用它跑引擎命令、看静帧；**改 project.json 和场景代码仍然用 Agent 自己的文件编辑工具**。
 
 ## 前置依赖
@@ -9,6 +9,7 @@ Agent 用它跑引擎命令、看静帧；**改 project.json 和场景代码仍�
 ## 工具
 | 工具 | 作用 |
 |---|---|
+| `mjv_doctor` | 环境检查：缺什么、怎么装（新电脑、每次开工前） |
 | `mjv_guide` | 读文档：使用手册（默认）、`doc: "visual"` 视觉手法、`"art"` 美术指导流程、`"case"` 案例；可按节号或关键词取 |
 | `mjv_scenes` | 列出场景库和项目场景的用途、参数 |
 | `mjv_new_project` | 新建项目（`vibe: true` 无口播横屏；`style` 套用风格包） |

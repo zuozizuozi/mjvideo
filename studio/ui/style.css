@@ -58,6 +58,8 @@ textarea { width: 100%; resize: vertical; min-height: 54px; }
 details { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 10px 14px; margin-top: 10px; }
 details pre { white-space: pre-wrap; font: 13px/1.6 "Microsoft YaHei", sans-serif; margin: 8px 0 0; }
 video.out { width: 100%; max-height: 520px; background: #000; border-radius: var(--radius); }
+#doctor .warn { max-width: 1400px; margin: 12px auto 0; padding: 10px 24px; background: var(--accent-soft); color: var(--text); border-radius: var(--radius); font-size: 13px; }
+#doctor .warn b { color: var(--accent); } #doctor code { font-family: Consolas, monospace; font-size: 12px; }
 #toast { position: fixed; right: 20px; bottom: 20px; display: flex; flex-direction: column; gap: 8px; z-index: 10; }
 #toast div { background: var(--text); color: var(--bg); padding: 10px 14px; border-radius: 8px; max-width: 420px; box-shadow: var(--shadow); font-size: 13px; white-space: pre-wrap; }
 #toast div.err { background: #b3261e; color: #fff; }
